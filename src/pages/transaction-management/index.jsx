@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { budgetService } from '../../services/budgetService';
 import Header from '../../components/ui/Header';
 import TransactionForm from './components/TransactionForm';
 import TransactionFilters from './components/TransactionFilters';
@@ -6,118 +8,13 @@ import TransactionTable from './components/TransactionTable';
 import EditTransactionModal from './components/EditTransactionModal';
 
 const TransactionManagement = () => {
-  // Mock categories data
-  const categories = [
-    { id: 1, name: "Salary", type: "income" },
-    { id: 2, name: "Freelance", type: "income" },
-    { id: 3, name: "Investment Returns", type: "income" },
-    { id: 4, name: "Business Income", type: "income" },
-    { id: 5, name: "Rental Income", type: "income" },
-    { id: 6, name: "Food & Dining", type: "expense" },
-    { id: 7, name: "Transportation", type: "expense" },
-    { id: 8, name: "Shopping", type: "expense" },
-    { id: 9, name: "Entertainment", type: "expense" },
-    { id: 10, name: "Bills & Utilities", type: "expense" },
-    { id: 11, name: "Healthcare", type: "expense" },
-    { id: 12, name: "Education", type: "expense" },
-    { id: 13, name: "Travel", type: "expense" },
-    { id: 14, name: "Insurance", type: "expense" },
-    { id: 15, name: "Miscellaneous", type: "expense" }
-  ];
-
-  // Mock transactions data
-  const [transactions, setTransactions] = useState([
-    {
-      id: 1,
-      type: "income",
-      amount: 5000.00,
-      category: "Salary",
-      date: "2025-01-15",
-      description: "Monthly salary payment from TechCorp Inc.",
-      timestamp: "2025-01-15T09:00:00.000Z"
-    },
-    {
-      id: 2,
-      type: "expense",
-      amount: 1200.00,
-      category: "Bills & Utilities",
-      date: "2025-01-14",
-      description: "Monthly rent payment for apartment",
-      timestamp: "2025-01-14T10:30:00.000Z"
-    },
-    {
-      id: 3,
-      type: "expense",
-      amount: 85.50,
-      category: "Food & Dining",
-      date: "2025-01-13",
-      description: "Grocery shopping at Whole Foods Market",
-      timestamp: "2025-01-13T16:45:00.000Z"
-    },
-    {
-      id: 4,
-      type: "income",
-      amount: 750.00,
-      category: "Freelance",
-      date: "2025-01-12",
-      description: "Web development project completion payment",
-      timestamp: "2025-01-12T14:20:00.000Z"
-    },
-    {
-      id: 5,
-      type: "expense",
-      amount: 45.00,
-      category: "Transportation",
-      date: "2025-01-11",
-      description: "Gas station fill-up for weekly commute",
-      timestamp: "2025-01-11T08:15:00.000Z"
-    },
-    {
-      id: 6,
-      type: "expense",
-      amount: 299.99,
-      category: "Shopping",
-      date: "2025-01-10",
-      description: "New laptop accessories and office supplies",
-      timestamp: "2025-01-10T13:30:00.000Z"
-    },
-    {
-      id: 7,
-      type: "income",
-      amount: 200.00,
-      category: "Investment Returns",
-      date: "2025-01-09",
-      description: "Quarterly dividend payment from stock portfolio",
-      timestamp: "2025-01-09T11:00:00.000Z"
-    },
-    {
-      id: 8,
-      type: "expense",
-      amount: 65.00,
-      category: "Entertainment",
-      date: "2025-01-08",
-      description: "Movie tickets and dinner with friends",
-      timestamp: "2025-01-08T19:45:00.000Z"
-    },
-    {
-      id: 9,
-      type: "expense",
-      amount: 120.00,
-      category: "Healthcare",
-      date: "2025-01-07",
-      description: "Annual dental checkup and cleaning",
-      timestamp: "2025-01-07T15:30:00.000Z"
-    },
-    {
-      id: 10,
-      type: "expense",
-      amount: 89.99,
-      category: "Bills & Utilities",
-      date: "2025-01-06",
-      description: "Monthly internet and cable service payment",
-      timestamp: "2025-01-06T12:00:00.000Z"
-    }
-  ]);
+  const { user } = useAuth();
+  
+  // Remove hardcoded mock data - replace with state
+  const [categories, setCategories] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Filter and sort state
   const [filters, setFilters] = useState({
@@ -137,8 +34,67 @@ const TransactionManagement = () => {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (user?.id) {
+      loadData();
+      
+      // Set up real-time subscription
+      const unsubscribe = budgetService?.subscribeToTransactions(
+        user?.id,
+        (payload) => {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+          
+          switch (eventType) {
+            case 'INSERT':
+              if (newRecord?.user_id === user?.id) {
+                // Reload data to get category information
+                loadData();
+              }
+              break;
+            case 'UPDATE':
+              if (newRecord?.user_id === user?.id) {
+                loadData();
+              }
+              break;
+            case 'DELETE':
+              setTransactions(prev => 
+                prev?.filter(t => t?.id !== oldRecord?.id)
+              );
+              break;
+          }
+        }
+      );
+
+      return () => unsubscribe?.();
+    }
+  }, [user?.id]);
+
+  const loadData = async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const [transactionsData, categoriesData] = await Promise.all([
+        budgetService?.getTransactions(user?.id),
+        budgetService?.getCategories(user?.id)
+      ]);
+
+      setTransactions(transactionsData || []);
+      setCategories(categoriesData || []);
+
+    } catch (error) {
+      setError(error?.message || 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter transactions based on current filters
   const filteredTransactions = useMemo(() => {
+    if (!transactions?.length) return [];
+    
     let filtered = [...transactions];
 
     // Search filter
@@ -155,7 +111,7 @@ const TransactionManagement = () => {
 
     // Category filter
     if (filters?.category) {
-      filtered = filtered?.filter(transaction => transaction?.category === filters?.category);
+      filtered = filtered?.filter(transaction => transaction?.category_id === filters?.category);
     }
 
     // Date range filter
@@ -172,6 +128,8 @@ const TransactionManagement = () => {
 
   // Sort filtered transactions
   const sortedTransactions = useMemo(() => {
+    if (!filteredTransactions?.length) return [];
+    
     const sorted = [...filteredTransactions];
     
     sorted?.sort((a, b) => {
@@ -183,8 +141,8 @@ const TransactionManagement = () => {
         aValue = new Date(aValue);
         bValue = new Date(bValue);
       } else if (sortConfig?.field === 'amount') {
-        aValue = parseFloat(aValue);
-        bValue = parseFloat(bValue);
+        aValue = parseFloat(aValue || 0);
+        bValue = parseFloat(bValue || 0);
       } else if (typeof aValue === 'string') {
         aValue = aValue?.toLowerCase();
         bValue = bValue?.toLowerCase();
@@ -205,13 +163,24 @@ const TransactionManagement = () => {
   // Calculate total filtered amount
   const totalFilteredAmount = useMemo(() => {
     return filteredTransactions?.reduce((total, transaction) => {
-      return total + (transaction?.type === 'income' ? transaction?.amount : -transaction?.amount);
+      return total + (transaction?.type === 'income' 
+        ? parseFloat(transaction?.amount || 0) 
+        : -parseFloat(transaction?.amount || 0)
+      );
     }, 0);
   }, [filteredTransactions]);
 
   // Handle adding new transaction
-  const handleAddTransaction = (newTransaction) => {
-    setTransactions(prev => [newTransaction, ...prev]);
+  const handleAddTransaction = async (newTransactionData) => {
+    try {
+      await budgetService?.createTransaction({
+        ...newTransactionData,
+        user_id: user?.id
+      });
+      // Real-time subscription will handle the update
+    } catch (error) {
+      setError(error?.message || 'Failed to add transaction');
+    }
   };
 
   // Handle editing transaction
@@ -221,17 +190,27 @@ const TransactionManagement = () => {
   };
 
   // Handle saving edited transaction
-  const handleSaveTransaction = (updatedTransaction) => {
-    setTransactions(prev =>
-      prev?.map(transaction =>
-        transaction?.id === updatedTransaction?.id ? updatedTransaction : transaction
-      )
-    );
+  const handleSaveTransaction = async (updatedTransactionData) => {
+    try {
+      await budgetService?.updateTransaction(editingTransaction?.id, updatedTransactionData);
+      setIsEditModalOpen(false);
+      setEditingTransaction(null);
+      // Real-time subscription will handle the update
+    } catch (error) {
+      setError(error?.message || 'Failed to update transaction');
+    }
   };
 
   // Handle deleting transaction
-  const handleDeleteTransaction = (transactionId) => {
-    setTransactions(prev => prev?.filter(transaction => transaction?.id !== transactionId));
+  const handleDeleteTransaction = async (transactionId) => {
+    if (window?.confirm('Are you sure you want to delete this transaction?')) {
+      try {
+        await budgetService?.deleteTransaction(transactionId);
+        // Real-time subscription will handle the update
+      } catch (error) {
+        setError(error?.message || 'Failed to delete transaction');
+      }
+    }
   };
 
   // Handle filter changes
@@ -243,6 +222,24 @@ const TransactionManagement = () => {
   const handleSort = (newSortConfig) => {
     setSortConfig(newSortConfig);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-16 lg:pt-16 pb-20 lg:pb-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading transactions...</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -256,6 +253,18 @@ const TransactionManagement = () => {
               Add new transactions and manage your financial history with advanced filtering and sorting capabilities.
             </p>
           </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+              <p className="text-red-800">{error}</p>
+              <button 
+                onClick={() => setError('')}
+                className="text-red-600 text-sm mt-2 hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           {/* Transaction Form */}
           <div className="mb-8">
@@ -295,6 +304,7 @@ const TransactionManagement = () => {
           </div>
         </div>
       </main>
+      
       {/* Edit Transaction Modal */}
       <EditTransactionModal
         transaction={editingTransaction}
