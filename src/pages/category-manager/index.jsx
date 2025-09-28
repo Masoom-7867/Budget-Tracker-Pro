@@ -12,15 +12,15 @@ const CategoryManager = () => {
   // Mock data for categories
   useEffect(() => {
     const mockIncomeCategories = [
-      {
-        id: 1,
-        name: 'Salary',
-        description: 'Monthly salary from employment',
-        icon: 'Briefcase',
-        type: 'income',
-        transactionCount: 12,
-        lastUsed: '2 days ago'
-      },
+      // {
+      //   id: 1,
+      //   name: 'Salary',
+      //   description: 'Monthly salary from employment',
+      //   icon: 'Briefcase',
+      //   type: 'income',
+      //   transactionCount: 12,
+      //   lastUsed: '2 days ago'
+      // },
       {
         id: 2,
         name: 'Freelance',

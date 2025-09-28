@@ -32,66 +32,66 @@ const BudgetGoals = () => {
 
   // Mock budget goals data
   const mockBudgetGoals = [
-    {
-      id: 1,
-      categoryId: 1,
-      name: 'Groceries',
-      budgetedAmount: 800,
-      spentAmount: 520,
-      timePeriod: 'monthly',
-      icon: 'ShoppingCart',
-      color: '#059669'
-    },
-    {
-      id: 2,
-      categoryId: 2,
-      name: 'Transportation',
-      budgetedAmount: 400,
-      spentAmount: 280,
-      timePeriod: 'monthly',
-      icon: 'Car',
-      color: '#2563EB'
-    },
-    {
-      id: 3,
-      categoryId: 3,
-      name: 'Entertainment',
-      budgetedAmount: 300,
-      spentAmount: 350,
-      timePeriod: 'monthly',
-      icon: 'Film',
-      color: '#7C3AED'
-    },
-    {
-      id: 4,
-      categoryId: 4,
-      name: 'Utilities',
-      budgetedAmount: 250,
-      spentAmount: 220,
-      timePeriod: 'monthly',
-      icon: 'Zap',
-      color: '#D97706'
-    },
-    {
-      id: 5,
-      categoryId: 5,
-      name: 'Healthcare',
-      budgetedAmount: 200,
-      spentAmount: 150,
-      timePeriod: 'monthly',
-      icon: 'Heart',
-      color: '#DC2626'
-    },
-    {
-      id: 6,
-      categoryId: 6,
-      name: 'Dining Out',
-      budgetedAmount: 400,
-      spentAmount: 480,
-      timePeriod: 'monthly',
-      icon: 'Coffee',
-      color: '#0F766E'
-    }
+    // {
+    //   id: 1,
+    //   categoryId: 1,
+    //   name: 'Groceries',
+    //   budgetedAmount: 800,
+    //   spentAmount: 520,
+    //   timePeriod: 'monthly',
+    //   icon: 'ShoppingCart',
+    //   color: '#059669'
+    // },
+    // {
+    //   id: 2,
+    //   categoryId: 2,
+    //   name: 'Transportation',
+    //   budgetedAmount: 400,
+    //   spentAmount: 280,
+    //   timePeriod: 'monthly',
+    //   icon: 'Car',
+    //   color: '#2563EB'
+    // },
+    // {
+    //   id: 3,
+    //   categoryId: 3,
+    //   name: 'Entertainment',
+    //   budgetedAmount: 300,
+    //   spentAmount: 350,
+    //   timePeriod: 'monthly',
+    //   icon: 'Film',
+    //   color: '#7C3AED'
+    // },
+    // {
+    //   id: 4,
+    //   categoryId: 4,
+    //   name: 'Utilities',
+    //   budgetedAmount: 250,
+    //   spentAmount: 220,
+    //   timePeriod: 'monthly',
+    //   icon: 'Zap',
+    //   color: '#D97706'
+    // },
+    // {
+    //   id: 5,
+    //   categoryId: 5,
+    //   name: 'Healthcare',
+    //   budgetedAmount: 200,
+    //   spentAmount: 150,
+    //   timePeriod: 'monthly',
+    //   icon: 'Heart',
+    //   color: '#DC2626'
+    // },
+    // {
+    //   id: 6,
+    //   categoryId: 6,
+    //   name: 'Dining Out',
+    //   budgetedAmount: 400,
+    //   spentAmount: 480,
+    //   timePeriod: 'monthly',
+    //   icon: 'Coffee',
+    //   color: '#0F766E'
+    // }
   ];
 
   useEffect(() => {
