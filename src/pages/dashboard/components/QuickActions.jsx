@@ -1,84 +1,70 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import Button from '../../../components/ui/Button';
+import Icon from '../../../components/AppIcon';
+import { useNavigate } from 'react-router-dom';
 
 const QuickActions = () => {
-  const quickActionItems = [
+  const navigate = useNavigate();
+
+  const actions = [
     {
-      title: "Add Transaction",
-      description: "Record a new income or expense",
-      icon: "Plus",
-      path: "/transaction-management",
-      variant: "default",
-      color: "bg-primary"
+      id: 1,
+      name: 'Add Transaction',
+      description: 'Record new income or expense',
+      icon: 'Plus',
+      color: 'var(--color-success)',
+      bgColor: 'bg-success/10',
+      onClick: () => navigate('/transactions')
     },
     {
-      title: "View Transactions",
-      description: "Browse and manage your transaction history",
-      icon: "Receipt",
-      path: "/transaction-management",
-      variant: "outline",
-      color: "bg-secondary"
+      id: 2,
+      name: 'Manage Categories',
+      description: 'Add or edit categories',
+      icon: 'Folder',
+      color: 'var(--color-primary)',
+      bgColor: 'bg-primary/10',
+      onClick: () => navigate('/categories')
     },
     {
-      title: "Set Budget Goal",
-      description: "Create or update your budget targets",
-      icon: "Target",
-      path: "/budget-goals",
-      variant: "outline",
-      color: "bg-accent"
+      id: 3,
+      name: 'Set Budget',
+      description: 'Create budget goals',
+      icon: 'Target',
+      color: 'var(--color-accent)',
+      bgColor: 'bg-accent/10',
+      onClick: () => navigate('/budget-goals')
     },
     {
-      title: "Track Savings",
-      description: "Monitor your savings progress",
-      icon: "PiggyBank",
-      path: "/savings-tracker",
-      variant: "outline",
-      color: "bg-success"
+      id: 4,
+      name: 'View Reports',
+      description: 'Detailed financial reports',
+      icon: 'BarChart3',
+      color: 'var(--color-secondary)',
+      bgColor: 'bg-secondary/10',
+      onClick: () => navigate('/reports')
     }
   ];
 
   return (
     <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Quick Actions</h2>
-        <div className="text-sm text-muted-foreground">
-          Manage your finances efficiently
-        </div>
+        <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
+        <Icon name="Zap" size={20} color="var(--color-muted-foreground)" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {quickActionItems?.map((action, index) => (
-          <Link key={index} to={action?.path} className="block">
-            <div className="group p-4 rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md bg-muted/20 hover:bg-muted/40">
-              <div className="flex items-start space-x-4">
-                <div className={`p-3 rounded-lg ${action?.color} group-hover:scale-110 transition-transform duration-200`}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    iconName={action?.icon}
-                    className="text-white hover:bg-transparent p-0 h-auto w-auto"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
-                    {action?.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    {action?.description}
-                  </p>
-                </div>
-              </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {actions.map((action) => (
+          <button
+            key={action.id}
+            onClick={action.onClick}
+            className="p-4 bg-background border border-border rounded-lg text-left hover:border-primary/50 hover:shadow-md transition-all duration-200 group"
+          >
+            <div className={`w-10 h-10 rounded-lg ${action.bgColor} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200`}>
+              <Icon name={action.icon} size={20} color={action.color} />
             </div>
-          </Link>
+            <h3 className="font-semibold text-foreground mb-1 text-sm">{action.name}</h3>
+            <p className="text-xs text-muted-foreground">{action.description}</p>
+          </button>
         ))}
-      </div>
-      <div className="mt-6 pt-4 border-t border-border">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Need help getting started?</span>
-          <Button variant="ghost" size="sm" iconName="HelpCircle" iconPosition="left">
-            View Guide
-          </Button>
-        </div>
       </div>
     </div>
   );

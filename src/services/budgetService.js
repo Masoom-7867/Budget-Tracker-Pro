@@ -4,72 +4,20 @@ export const budgetService = {
   // Categories
   async getCategories(userId) {
     try {
-      console.log('🔄 budgetService.getCategories: Fetching for user', userId);
-      
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('categories')
-        .select('*', { count: 'exact' }) // Get count for debugging
+        .select('*')
         .eq('user_id', userId)
         .order('name');
 
-      console.log('📊 Supabase raw response:', { data, error, count });
-      
-      if (error) {
-        console.error('❌ Supabase error in getCategories:', error);
-        throw error;
-      }
-
-      console.log('✅ budgetService.getCategories: Success, found', data?.length, 'categories');
-      console.log('📋 Categories data sample:', data?.slice(0, 2));
-      
+      if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('❌ Error in budgetService.getCategories:', error);
-      throw new Error('Failed to load categories: ' + error.message);
+      console.error('Error fetching categories:', error);
+      throw new Error('Failed to load categories');
     }
   },
 
-  // Test function to directly query categories
-  async testCategoriesQuery(userId) {
-    try {
-      console.log('🧪 TEST: Direct categories query for user', userId);
-      
-      // Test 1: Basic query
-      const { data: data1, error: error1 } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('user_id', userId);
-      
-      console.log('🧪 Test 1 - Basic query:', { data1, error1 });
-
-      // Test 2: Count only
-      const { count, error: error2 } = await supabase
-        .from('categories')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
-      
-      console.log('🧪 Test 2 - Count query:', { count, error2 });
-
-      // Test 3: Without user filter (to see all categories)
-      const { data: data3, error: error3 } = await supabase
-        .from('categories')
-        .select('*')
-        .limit(5);
-      
-      console.log('🧪 Test 3 - All categories (limit 5):', { data3, error3 });
-
-      return {
-        basicQuery: { data: data1, error: error1 },
-        count: count,
-        allCategoriesSample: { data: data3, error: error3 }
-      };
-    } catch (error) {
-      console.error('🧪 Test failed:', error);
-      throw error;
-    }
-  },
-
-  // ... rest of your budgetService methods remain the same
   async createCategory(categoryData) {
     try {
       const { data, error } = await supabase
