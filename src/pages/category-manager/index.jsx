@@ -2,172 +2,193 @@ import React, { useState, useEffect } from 'react';
 import Header from '../../components/ui/Header';
 import CategoryStats from './components/CategoryStats';
 import CategorySection from './components/CategorySection';
+import { supabase } from '../../lib/supabase';
 
 const CategoryManager = () => {
   const [incomeCategories, setIncomeCategories] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [incomeSearchTerm, setIncomeSearchTerm] = useState('');
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data for categories
-  useEffect(() => {
-    const mockIncomeCategories = [
-      // {
-      //   id: 1,
-      //   name: 'Salary',
-      //   description: 'Monthly salary from employment',
-      //   icon: 'Briefcase',
-      //   type: 'income',
-      //   transactionCount: 12,
-      //   lastUsed: '2 days ago'
-      // },
-      {
-        id: 2,
-        name: 'Freelance',
-        description: 'Income from freelance projects',
-        icon: 'Laptop',
-        type: 'income',
-        transactionCount: 8,
-        lastUsed: '1 week ago'
-      },
-      {
-        id: 3,
-        name: 'Investment Returns',
-        description: 'Dividends and capital gains',
-        icon: 'TrendingUp',
-        type: 'income',
-        transactionCount: 5,
-        lastUsed: '3 days ago'
-      },
-      {
-        id: 4,
-        name: 'Side Business',
-        description: 'Income from side business ventures',
-        icon: 'Store',
-        type: 'income',
-        transactionCount: 15,
-        lastUsed: '1 day ago'
-      },
-      {
-        id: 5,
-        name: 'Rental Income',
-        description: 'Monthly rental from properties',
-        icon: 'Home',
-        type: 'income',
-        transactionCount: 6,
-        lastUsed: '5 days ago'
-      }
-    ];
+  // Format last used date for display
+  const formatLastUsed = (dateString) => {
+    if (!dateString) return 'Never';
+    
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      const diffMinutes = Math.floor(diffTime / (1000 * 60));
 
-    const mockExpenseCategories = [
-      {
-        id: 6,
-        name: 'Food & Dining',
-        description: 'Groceries, restaurants, and food delivery',
-        icon: 'Utensils',
-        type: 'expense',
-        transactionCount: 45,
-        lastUsed: '1 hour ago'
-      },
-      {
-        id: 7,
-        name: 'Transportation',
-        description: 'Gas, public transport, and ride-sharing',
-        icon: 'Car',
-        type: 'expense',
-        transactionCount: 28,
-        lastUsed: '3 hours ago'
-      },
-      {
-        id: 8,
-        name: 'Housing',
-        description: 'Rent, mortgage, and utilities',
-        icon: 'Home',
-        type: 'expense',
-        transactionCount: 18,
-        lastUsed: '2 days ago'
-      },
-      {
-        id: 9,
-        name: 'Entertainment',
-        description: 'Movies, games, and recreational activities',
-        icon: 'Gamepad2',
-        type: 'expense',
-        transactionCount: 22,
-        lastUsed: '4 hours ago'
-      },
-      {
-        id: 10,
-        name: 'Healthcare',
-        description: 'Medical expenses and insurance',
-        icon: 'Heart',
-        type: 'expense',
-        transactionCount: 12,
-        lastUsed: '1 week ago'
-      },
-      {
-        id: 11,
-        name: 'Shopping',
-        description: 'Clothing, electronics, and personal items',
-        icon: 'ShoppingBag',
-        type: 'expense',
-        transactionCount: 35,
-        lastUsed: '6 hours ago'
-      },
-      {
-        id: 12,
-        name: 'Education',
-        description: 'Courses, books, and learning materials',
-        icon: 'BookOpen',
-        type: 'expense',
-        transactionCount: 8,
-        lastUsed: '3 days ago'
-      },
-      {
-        id: 13,
-        name: 'Travel',
-        description: 'Vacation and business travel expenses',
-        icon: 'Plane',
-        type: 'expense',
-        transactionCount: 6,
-        lastUsed: '2 weeks ago'
-      }
-    ];
-
-    setIncomeCategories(mockIncomeCategories);
-    setExpenseCategories(mockExpenseCategories);
-  }, []);
-
-  const handleAddCategory = (categoryData) => {
-    const newCategory = {
-      id: Date.now(),
-      ...categoryData,
-      icon: categoryData?.type === 'income' ? 'DollarSign' : 'Minus',
-      transactionCount: 0,
-      lastUsed: 'Never'
-    };
-
-    if (categoryData?.type === 'income') {
-      setIncomeCategories(prev => [...prev, newCategory]);
-    } else {
-      setExpenseCategories(prev => [...prev, newCategory]);
+      if (diffMinutes < 1) return 'Just now';
+      if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+      if (diffHours < 24) return `${diffHours} hours ago`;
+      if (diffDays === 1) return '1 day ago';
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      return `${Math.floor(diffDays / 30)} months ago`;
+    } catch (err) {
+      return 'Never';
     }
   };
 
-  const handleEditCategory = (id, updatedData) => {
-    const updateCategories = (categories) =>
-      categories?.map(cat =>
-        cat?.id === id ? { ...cat, ...updatedData } : cat
-      );
+  // Normalize category data for components
+  const normalizeCategory = (category) => ({
+    ...category,
+    transactionCount: category.transaction_count || 0,
+    lastUsed: formatLastUsed(category.last_used)
+  });
 
-    setIncomeCategories(prev => updateCategories(prev));
-    setExpenseCategories(prev => updateCategories(prev));
+  // Fetch categories from Supabase
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
+      if (data) {
+        const normalizedData = data.map(normalizeCategory);
+        const income = normalizedData.filter(cat => cat.type === 'income');
+        const expense = normalizedData.filter(cat => cat.type === 'expense');
+        
+        setIncomeCategories(income);
+        setExpenseCategories(expense);
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      setError('Failed to load categories: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteCategory = (id) => {
-    setIncomeCategories(prev => prev?.filter(cat => cat?.id !== id));
-    setExpenseCategories(prev => prev?.filter(cat => cat?.id !== id));
+  const handleAddCategory = async (categoryData) => {
+    try {
+      setError(null);
+      console.log('Adding category:', categoryData);
+
+      // Validate required fields
+      if (!categoryData.name || !categoryData.name.trim()) {
+        throw new Error('Category name is required');
+      }
+
+      if (!categoryData.type) {
+        throw new Error('Category type is required');
+      }
+
+      const newCategory = {
+        name: categoryData.name.trim(),
+        description: categoryData.description?.trim() || null, // Use null instead of empty string
+        icon: categoryData.icon || (categoryData.type === 'income' ? 'DollarSign' : 'Minus'),
+        type: categoryData.type,
+        transaction_count: 0,
+        last_used: null
+      };
+
+      console.log('Sending to Supabase:', newCategory);
+
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([newCategory])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Category added successfully:', data);
+
+      if (data) {
+        const normalizedCategory = normalizeCategory(data);
+        if (data.type === 'income') {
+          setIncomeCategories(prev => [...prev, normalizedCategory]);
+        } else {
+          setExpenseCategories(prev => [...prev, normalizedCategory]);
+        }
+      }
+    } catch (err) {
+      console.error('Error adding category:', err);
+      setError('Failed to add category: ' + (err.message || 'Unknown error'));
+    }
   };
+
+  const handleEditCategory = async (id, updatedData) => {
+    try {
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('categories')
+        .update({
+          name: updatedData.name,
+          description: updatedData.description
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const normalizedCategory = normalizeCategory(data);
+        const updateCategories = (categories) =>
+          categories.map(cat =>
+            cat.id === id ? { ...cat, ...normalizedCategory } : cat
+          );
+
+        setIncomeCategories(prev => updateCategories(prev));
+        setExpenseCategories(prev => updateCategories(prev));
+      }
+    } catch (err) {
+      console.error('Error updating category:', err);
+      setError('Failed to update category: ' + err.message);
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    try {
+      setError(null);
+
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setIncomeCategories(prev => prev.filter(cat => cat.id !== id));
+      setExpenseCategories(prev => prev.filter(cat => cat.id !== id));
+    } catch (err) {
+      console.error('Error deleting category:', err);
+      setError('Failed to delete category: ' + err.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="pt-16 lg:pt-20 flex justify-center items-center min-h-[200px]">
+          <div className="text-lg text-muted-foreground">Loading categories...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -176,6 +197,13 @@ const CategoryManager = () => {
       {/* Main Content */}
       <main className="pt-16 lg:pt-20 pb-20 lg:pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Category Manager</h1>
