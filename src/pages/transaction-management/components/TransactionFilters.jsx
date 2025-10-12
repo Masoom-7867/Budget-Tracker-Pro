@@ -17,11 +17,12 @@ const TransactionFilters = ({
     { value: 'expense', label: 'Expense' }
   ];
 
+  // Use category IDs instead of names
   const categoryOptions = [
     { value: '', label: 'All Categories' },
-    ...categories?.map(cat => ({
-      value: cat?.name,
-      label: cat?.name
+    ...categories.map(cat => ({
+      value: cat.id,
+      label: cat.name
     }))
   ];
 
@@ -42,7 +43,7 @@ const TransactionFilters = ({
     });
   };
 
-  const hasActiveFilters = Object.values(filters)?.some(value => value !== '');
+  const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
   return (
     <div className="bg-card rounded-lg border border-border p-6 mb-6">
@@ -74,21 +75,21 @@ const TransactionFilters = ({
           label="Search"
           type="search"
           placeholder="Search descriptions..."
-          value={filters?.search}
-          onChange={(e) => handleFilterChange('search', e?.target?.value)}
+          value={filters.search}
+          onChange={(e) => handleFilterChange('search', e.target.value)}
         />
 
         <Select
           label="Transaction Type"
           options={transactionTypeOptions}
-          value={filters?.type}
+          value={filters.type}
           onChange={(value) => handleFilterChange('type', value)}
         />
 
         <Select
           label="Category"
           options={categoryOptions}
-          value={filters?.category}
+          value={filters.category}
           onChange={(value) => handleFilterChange('category', value)}
         />
       </div>
@@ -96,15 +97,15 @@ const TransactionFilters = ({
         <Input
           label="From Date"
           type="date"
-          value={filters?.dateFrom}
-          onChange={(e) => handleFilterChange('dateFrom', e?.target?.value)}
+          value={filters.dateFrom}
+          onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
         />
 
         <Input
           label="To Date"
           type="date"
-          value={filters?.dateTo}
-          onChange={(e) => handleFilterChange('dateTo', e?.target?.value)}
+          value={filters.dateTo}
+          onChange={(e) => handleFilterChange('dateTo', e.target.value)}
         />
       </div>
       {/* Filter Summary */}
@@ -115,7 +116,7 @@ const TransactionFilters = ({
             <span className={`font-medium ${
               totalFilteredAmount >= 0 ? 'text-success' : 'text-error'
             }`}>
-              Total: ${Math.abs(totalFilteredAmount)?.toLocaleString('en-US', { 
+              Total: {totalFilteredAmount >= 0 ? '+' : '-'}${Math.abs(totalFilteredAmount).toLocaleString('en-US', { 
                 minimumFractionDigits: 2, 
                 maximumFractionDigits: 2 
               })}

@@ -14,21 +14,22 @@ const EditTransactionModal = ({
   const [formData, setFormData] = useState({
     type: '',
     amount: '',
-    category: '',
+    category_id: '',
     date: '',
     description: ''
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (transaction) {
       setFormData({
-        type: transaction?.type,
-        amount: transaction?.amount?.toString(),
-        category: transaction?.category,
-        date: transaction?.date,
-        description: transaction?.description
+        type: transaction.type,
+        amount: transaction.amount.toString(),
+        category_id: transaction.category_id,
+        date: transaction.date,
+        description: transaction.description
       });
     }
   }, [transaction]);
@@ -45,7 +46,7 @@ const EditTransactionModal = ({
     }));
     
     // Clear error when user starts typing
-    if (errors?.[field]) {
+    if (errors[field]) {
       setErrors(prev => ({
         ...prev,
         [field]: ''
@@ -56,60 +57,75 @@ const EditTransactionModal = ({
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData?.type) {
+    if (!formData.type) {
       newErrors.type = 'Transaction type is required';
     }
 
-    if (!formData?.amount || parseFloat(formData?.amount) <= 0) {
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
       newErrors.amount = 'Please enter a valid amount greater than 0';
     }
 
-    if (!formData?.category) {
-      newErrors.category = 'Category is required';
+    if (!formData.category_id) {
+      newErrors.category_id = 'Category is required';
     }
 
-    if (!formData?.date) {
+    if (!formData.date) {
       newErrors.date = 'Date is required';
     }
 
-    if (!formData?.description?.trim()) {
+    if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors)?.length === 0;
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e?.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
     if (validateForm()) {
-      const updatedTransaction = {
-        ...transaction,
-        type: formData?.type,
-        amount: parseFloat(formData?.amount),
-        category: formData?.category,
-        date: formData?.date,
-        description: formData?.description?.trim()
-      };
+      setIsSubmitting(true);
+      try {
+        const updatedTransaction = {
+          type: formData.type,
+          amount: parseFloat(formData.amount),
+          category_id: formData.category_id,
+          date: formData.date,
+          description: formData.description.trim()
+        };
 
-      onSave(updatedTransaction);
-      onClose();
+        await onSave(updatedTransaction);
+        handleClose();
+      } catch (error) {
+        console.error('Error updating transaction:', error);
+        setErrors({ submit: error.message || 'Failed to update transaction' });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const handleClose = () => {
     setErrors({});
+    setFormData({
+      type: '',
+      amount: '',
+      category_id: '',
+      date: '',
+      description: ''
+    });
     onClose();
   };
 
-  const filteredCategories = categories?.filter(cat => 
-    formData?.type ? cat?.type === formData?.type : true
+  const filteredCategories = categories.filter(cat => 
+    formData.type ? cat.type === formData.type : true
   );
 
-  const categoryOptions = filteredCategories?.map(cat => ({
-    value: cat?.name,
-    label: cat?.name
+  // Use category IDs instead of names
+  const categoryOptions = filteredCategories.map(cat => ({
+    value: cat.id,
+    label: cat.name
   }));
 
   if (!isOpen) return null;
@@ -132,15 +148,24 @@ const EditTransactionModal = ({
           </Button>
         </div>
 
+        {errors.submit && (
+          <div className="mx-6 mt-4 p-4 bg-error/10 border border-error/20 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Icon name="AlertCircle" size={16} color="var(--color-error)" />
+              <p className="text-sm text-error">{errors.submit}</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Select
               label="Transaction Type"
               placeholder="Select transaction type"
               options={transactionTypes}
-              value={formData?.type}
+              value={formData.type}
               onChange={(value) => handleInputChange('type', value)}
-              error={errors?.type}
+              error={errors.type}
               required
             />
 
@@ -148,9 +173,9 @@ const EditTransactionModal = ({
               label="Amount"
               type="number"
               placeholder="0.00"
-              value={formData?.amount}
-              onChange={(e) => handleInputChange('amount', e?.target?.value)}
-              error={errors?.amount}
+              value={formData.amount}
+              onChange={(e) => handleInputChange('amount', e.target.value)}
+              error={errors.amount}
               min="0.01"
               step="0.01"
               required
@@ -160,21 +185,21 @@ const EditTransactionModal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Select
               label="Category"
-              placeholder="Select category"
+              placeholder={formData.type ? "Select category" : "Select type first"}
               options={categoryOptions}
-              value={formData?.category}
-              onChange={(value) => handleInputChange('category', value)}
-              error={errors?.category}
-              disabled={!formData?.type}
+              value={formData.category_id}
+              onChange={(value) => handleInputChange('category_id', value)}
+              error={errors.category_id}
+              disabled={!formData.type || categoryOptions.length === 0}
               required
             />
 
             <Input
               label="Date"
               type="date"
-              value={formData?.date}
-              onChange={(e) => handleInputChange('date', e?.target?.value)}
-              error={errors?.date}
+              value={formData.date}
+              onChange={(e) => handleInputChange('date', e.target.value)}
+              error={errors.date}
               required
             />
           </div>
@@ -187,12 +212,12 @@ const EditTransactionModal = ({
               className="w-full px-3 py-2 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
               rows="3"
               placeholder="Enter transaction description..."
-              value={formData?.description}
-              onChange={(e) => handleInputChange('description', e?.target?.value)}
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
               required
             />
-            {errors?.description && (
-              <p className="mt-1 text-sm text-error">{errors?.description}</p>
+            {errors.description && (
+              <p className="mt-1 text-sm text-error">{errors.description}</p>
             )}
           </div>
 
@@ -203,14 +228,16 @@ const EditTransactionModal = ({
               iconName="Save"
               iconPosition="left"
               className="flex-1 sm:flex-none"
+              disabled={isSubmitting}
             >
-              Save Changes
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               className="flex-1 sm:flex-none"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>

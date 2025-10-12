@@ -12,21 +12,21 @@ const TransactionTable = ({
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const handleSort = (field) => {
-    const direction = sortConfig?.field === field && sortConfig?.direction === 'asc' ? 'desc' : 'asc';
+    const direction = sortConfig.field === field && sortConfig.direction === 'asc' ? 'desc' : 'asc';
     onSort({ field, direction });
   };
 
   const getSortIcon = (field) => {
-    if (sortConfig?.field !== field) {
+    if (sortConfig.field !== field) {
       return <Icon name="ArrowUpDown" size={16} className="opacity-50" />;
     }
-    return sortConfig?.direction === 'asc' 
+    return sortConfig.direction === 'asc' 
       ? <Icon name="ArrowUp" size={16} />
       : <Icon name="ArrowDown" size={16} />;
   };
 
   const handleDeleteClick = (transaction) => {
-    setDeleteConfirm(transaction?.id);
+    setDeleteConfirm(transaction.id);
   };
 
   const handleDeleteConfirm = (transactionId) => {
@@ -39,7 +39,7 @@ const TransactionTable = ({
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString)?.toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -47,7 +47,7 @@ const TransactionTable = ({
   };
 
   const formatAmount = (amount, type) => {
-    const formattedAmount = Math.abs(amount)?.toLocaleString('en-US', {
+    const formattedAmount = Math.abs(amount).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
@@ -55,7 +55,17 @@ const TransactionTable = ({
     return type === 'income' ? `+$${formattedAmount}` : `-$${formattedAmount}`;
   };
 
-  if (transactions?.length === 0) {
+  // Get category display name
+  const getCategoryName = (transaction) => {
+    return transaction.category_name || 'Uncategorized';
+  };
+
+  // Get category icon
+  const getCategoryIcon = (transaction) => {
+    return transaction.category_icon || 'Folder';
+  };
+
+  if (transactions.length === 0) {
     return (
       <div className="bg-card rounded-lg border border-border p-8 text-center">
         <div className="flex flex-col items-center space-y-4">
@@ -100,11 +110,11 @@ const TransactionTable = ({
               </th>
               <th className="text-left p-4">
                 <button
-                  onClick={() => handleSort('category')}
+                  onClick={() => handleSort('category_name')}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
                 >
                   <span>Category</span>
-                  {getSortIcon('category')}
+                  {getSortIcon('category_name')}
                 </button>
               </th>
               <th className="text-left p-4">
@@ -131,41 +141,48 @@ const TransactionTable = ({
             </tr>
           </thead>
           <tbody>
-            {transactions?.map((transaction) => (
-              <tr key={transaction?.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+            {transactions.map((transaction) => (
+              <tr key={transaction.id} className="border-b border-border hover:bg-muted/30 transition-colors">
                 <td className="p-4">
-                  <span className="text-sm text-foreground">{formatDate(transaction?.date)}</span>
+                  <span className="text-sm text-foreground">{formatDate(transaction.date)}</span>
                 </td>
                 <td className="p-4">
-                  <span className="text-sm text-foreground font-medium">{transaction?.description}</span>
+                  <span className="text-sm text-foreground font-medium">{transaction.description}</span>
                 </td>
                 <td className="p-4">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary">
-                    {transaction?.category}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <Icon 
+                      name={getCategoryIcon(transaction)} 
+                      size={16} 
+                      className="text-muted-foreground" 
+                    />
+                    <span className="text-sm text-foreground">
+                      {getCategoryName(transaction)}
+                    </span>
+                  </div>
                 </td>
                 <td className="p-4">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    transaction?.type === 'income' ?'bg-success/10 text-success' :'bg-error/10 text-error'
+                    transaction.type === 'income' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
                   }`}>
-                    {transaction?.type === 'income' ? 'Income' : 'Expense'}
+                    {transaction.type === 'income' ? 'Income' : 'Expense'}
                   </span>
                 </td>
                 <td className="p-4 text-right">
                   <span className={`text-sm font-semibold ${
-                    transaction?.type === 'income' ? 'text-success' : 'text-error'
+                    transaction.type === 'income' ? 'text-success' : 'text-error'
                   }`}>
-                    {formatAmount(transaction?.amount, transaction?.type)}
+                    {formatAmount(transaction.amount, transaction.type)}
                   </span>
                 </td>
                 <td className="p-4">
                   <div className="flex items-center justify-center space-x-2">
-                    {deleteConfirm === transaction?.id ? (
+                    {deleteConfirm === transaction.id ? (
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="destructive"
                           size="xs"
-                          onClick={() => handleDeleteConfirm(transaction?.id)}
+                          onClick={() => handleDeleteConfirm(transaction.id)}
                         >
                           Confirm
                         </Button>
@@ -202,41 +219,49 @@ const TransactionTable = ({
           </tbody>
         </table>
       </div>
+
       {/* Mobile Card Layout */}
       <div className="lg:hidden space-y-4 p-4">
-        {transactions?.map((transaction) => (
-          <div key={transaction?.id} className="bg-muted/30 rounded-lg p-4 border border-border">
+        {transactions.map((transaction) => (
+          <div key={transaction.id} className="bg-muted/30 rounded-lg p-4 border border-border">
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <h4 className="font-medium text-foreground mb-1">{transaction?.description}</h4>
-                <p className="text-sm text-muted-foreground">{formatDate(transaction?.date)}</p>
+                <h4 className="font-medium text-foreground mb-1">{transaction.description}</h4>
+                <p className="text-sm text-muted-foreground">{formatDate(transaction.date)}</p>
               </div>
               <span className={`text-lg font-semibold ${
-                transaction?.type === 'income' ? 'text-success' : 'text-error'
+                transaction.type === 'income' ? 'text-success' : 'text-error'
               }`}>
-                {formatAmount(transaction?.amount, transaction?.type)}
+                {formatAmount(transaction.amount, transaction.type)}
               </span>
             </div>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary">
-                  {transaction?.category}
-                </span>
+                <div className="flex items-center space-x-1">
+                  <Icon 
+                    name={getCategoryIcon(transaction)} 
+                    size={14} 
+                    className="text-muted-foreground" 
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {getCategoryName(transaction)}
+                  </span>
+                </div>
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  transaction?.type === 'income' ?'bg-success/10 text-success' :'bg-error/10 text-error'
+                  transaction.type === 'income' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
                 }`}>
-                  {transaction?.type === 'income' ? 'Income' : 'Expense'}
+                  {transaction.type === 'income' ? 'Income' : 'Expense'}
                 </span>
               </div>
               
               <div className="flex items-center space-x-2">
-                {deleteConfirm === transaction?.id ? (
+                {deleteConfirm === transaction.id ? (
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="destructive"
                       size="xs"
-                      onClick={() => handleDeleteConfirm(transaction?.id)}
+                      onClick={() => handleDeleteConfirm(transaction.id)}
                     >
                       Confirm
                     </Button>
