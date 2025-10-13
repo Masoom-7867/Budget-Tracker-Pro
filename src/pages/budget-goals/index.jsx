@@ -14,6 +14,7 @@ const BudgetGoals = () => {
   const [budgetGoals, setBudgetGoals] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [expandedCards, setExpandedCards] = useState(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,8 +48,8 @@ const BudgetGoals = () => {
 
     try {
       setLoading(true);
-      setError('');
-
+      setError(''); // Clear error when starting to load
+      
       // Load categories and budget goals concurrently
       const [categoriesData, budgetGoalsData] = await Promise.all([
         budgetService.getCategories(user.id),
@@ -60,7 +61,7 @@ const BudgetGoals = () => {
 
     } catch (error) {
       console.error('Error loading budget data:', error);
-      setError(error.message || 'Failed to load budget data');
+      setError('Failed to load budget data: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -73,7 +74,6 @@ const BudgetGoals = () => {
     }, 0);
 
     const totalSpent = budgetGoals.reduce((sum, goal) => {
-      // Calculate spent amount from transactions (you might need to enhance this)
       const spentAmount = parseFloat(goal.spent_amount) || 0;
       return sum + spentAmount;
     }, 0);
@@ -122,8 +122,8 @@ const BudgetGoals = () => {
       const bSpent = parseFloat(b.spent_amount) || 0;
       const aProgress = aBudget > 0 ? (aSpent / aBudget) : 0;
       const bProgress = bBudget > 0 ? (bSpent / bBudget) : 0;
-      const aName = a.categories?.name || 'Uncategorized';
-      const bName = b.categories?.name || 'Uncategorized';
+      const aName = a.name || a.categories?.name || 'Uncategorized';
+      const bName = b.name || b.categories?.name || 'Uncategorized';
 
       switch (filters.sortBy) {
         case 'name-asc':
@@ -163,11 +163,13 @@ const BudgetGoals = () => {
   };
 
   const handleAddBudget = () => {
+    console.log('Opening budget modal for adding new budget');
     setEditingBudget(null);
     setIsModalOpen(true);
   };
 
   const handleEditBudget = (budget) => {
+    console.log('Opening budget modal for editing:', budget);
     setEditingBudget(budget);
     setIsModalOpen(true);
   };
@@ -185,16 +187,61 @@ const BudgetGoals = () => {
   };
 
   const handleSaveBudget = async (budgetData) => {
+    console.log('Save budget called with data:', budgetData);
+    
     try {
+      setSaving(true);
+      setError(''); // Clear previous errors
+      
+      // Validate required fields
+      if (!budgetData.category_id || !budgetData.amount || !budgetData.period) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      // Find the category to generate a name
+      const category = categories.find(cat => cat.id === budgetData.category_id);
+      const budgetName = budgetData.name || `${category?.name || 'Category'} Budget`;
+
+      // Set start_date to current date and calculate end_date based on period
+      const startDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      let endDate = new Date();
+      
+      switch (budgetData.period) {
+        case 'weekly':
+          endDate.setDate(endDate.getDate() + 7);
+          break;
+        case 'monthly':
+          endDate.setMonth(endDate.getMonth() + 1);
+          break;
+        case 'yearly':
+          endDate.setFullYear(endDate.getFullYear() + 1);
+          break;
+        default:
+          endDate.setMonth(endDate.getMonth() + 1); // Default to monthly
+      }
+      
+      const endDateString = endDate.toISOString().split('T')[0];
+
       const budgetWithUser = {
         ...budgetData,
-        user_id: user.id
+        user_id: user.id,
+        // The service will convert 'amount' to 'budgeted_amount'
+        amount: parseFloat(budgetData.amount),
+        category_id: budgetData.category_id,
+        period: budgetData.period,
+        name: budgetName,
+        start_date: startDate,
+        end_date: endDateString
       };
+
+      console.log('Saving budget goal with data:', budgetWithUser);
 
       if (editingBudget) {
         await budgetService.updateBudgetGoal(editingBudget.id, budgetWithUser);
+        console.log('Budget goal updated successfully');
       } else {
         await budgetService.createBudgetGoal(budgetWithUser);
+        console.log('Budget goal created successfully');
       }
       
       setIsModalOpen(false);
@@ -203,6 +250,8 @@ const BudgetGoals = () => {
     } catch (error) {
       console.error('Error saving budget goal:', error);
       setError('Failed to save budget goal: ' + error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -221,9 +270,6 @@ const BudgetGoals = () => {
     });
   };
 
-  const { totalBudget, totalSpent, remainingBalance, completionPercentage } = calculateTotals();
-  const filteredBudgets = getFilteredAndSortedBudgets();
-
   // Format budget data for display
   const getBudgetDisplayData = (budget) => {
     const category = categories.find(cat => cat.id === budget.category_id);
@@ -233,15 +279,20 @@ const BudgetGoals = () => {
     return {
       id: budget.id,
       categoryId: budget.category_id,
-      name: category?.name || 'Uncategorized',
+      name: budget.name || category?.name || 'Uncategorized',
       budgetedAmount: budgetAmount,
       spentAmount: spentAmount,
       timePeriod: budget.period || 'monthly',
       icon: category?.icon || 'Target',
       color: category?.color || '#6B7280',
-      category: category // Include full category data
+      category: category, // Include full category data
+      startDate: budget.start_date,
+      endDate: budget.end_date
     };
   };
+
+  const { totalBudget, totalSpent, remainingBalance, completionPercentage } = calculateTotals();
+  const filteredBudgets = getFilteredAndSortedBudgets();
 
   if (loading) {
     return (
@@ -254,28 +305,6 @@ const BudgetGoals = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading budget goals...</p>
               </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-16 lg:pt-16 pb-20 lg:pb-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-              <h3 className="text-red-800 font-medium mb-2">Error Loading Budget Goals</h3>
-              <p className="text-red-600 mb-4">{error}</p>
-              <button 
-                onClick={loadBudgetData}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-              >
-                Try Again
-              </button>
             </div>
           </div>
         </main>
@@ -398,7 +427,7 @@ const BudgetGoals = () => {
           {filteredBudgets.length > 0 && (
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredBudgets.length} of {budgetGoals.length} budget goals
+                Showing {filteredBudgets.length} of {budgetGoals.length} budget goal{filteredBudgets.length !== 1 ? 's' : ''}
               </p>
             </div>
           )}
@@ -406,16 +435,21 @@ const BudgetGoals = () => {
       </main>
 
       {/* Budget Modal */}
-      <BudgetModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingBudget(null);
-        }}
-        onSave={handleSaveBudget}
-        editingBudget={editingBudget}
-        categories={categories}
-      />
+      {isModalOpen && (
+        <BudgetModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            console.log('Closing budget modal');
+            setIsModalOpen(false);
+            setEditingBudget(null);
+            setError(''); // Clear errors when closing
+          }}
+          onSave={handleSaveBudget}
+          editingBudget={editingBudget}
+          categories={categories}
+          saving={saving}
+        />
+      )}
     </div>
   );
 };

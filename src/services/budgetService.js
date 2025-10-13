@@ -174,6 +174,172 @@ export const budgetService = {
     }
   },
 
+  // Budget Goals
+  async getBudgetGoals(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('budget_goals')
+        .select(`
+          *,
+          categories (
+            id,
+            name,
+            icon,
+            type,
+            color
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Calculate spent amount for each budget goal
+      const budgetGoalsWithSpent = await Promise.all(
+        (data || []).map(async (budget) => {
+          // Get transactions for this category to calculate spent amount
+          const { data: transactions } = await supabase
+            .from('transactions')
+            .select('amount')
+            .eq('category_id', budget.category_id)
+            .eq('user_id', userId)
+            .eq('type', 'expense');
+
+          const spentAmount = transactions?.reduce((sum, transaction) => 
+            sum + (parseFloat(transaction.amount) || 0), 0
+          ) || 0;
+
+          return {
+            ...budget,
+            spent_amount: spentAmount
+          };
+        })
+      );
+
+      return budgetGoalsWithSpent;
+    } catch (error) {
+      console.error('Error fetching budget goals:', error);
+      throw new Error('Failed to load budget goals');
+    }
+  },
+// In budgetService.js - update the createBudgetGoal function:
+
+// In budgetService.js - update the createBudgetGoal function:
+
+async createBudgetGoal(budgetGoalData) {
+  try {
+    console.log('Creating budget goal with data:', budgetGoalData);
+    
+    // Calculate dates if not provided
+    const startDate = budgetGoalData.start_date || new Date().toISOString().split('T')[0];
+    let endDate = budgetGoalData.end_date;
+    
+    if (!endDate) {
+      const end = new Date();
+      switch (budgetGoalData.period) {
+        case 'weekly':
+          end.setDate(end.getDate() + 7);
+          break;
+        case 'monthly':
+          end.setMonth(end.getMonth() + 1);
+          break;
+        case 'yearly':
+          end.setFullYear(end.getFullYear() + 1);
+          break;
+        default:
+          end.setMonth(end.getMonth() + 1);
+      }
+      endDate = end.toISOString().split('T')[0];
+    }
+
+    // Use budgeted_amount instead of amount to match your schema
+    const dataToInsert = {
+      ...budgetGoalData,
+      budgeted_amount: parseFloat(budgetGoalData.amount || budgetGoalData.budgeted_amount) || 0,
+      name: budgetGoalData.name || 'Budget Goal', // Ensure name is always provided
+      start_date: startDate,
+      end_date: endDate
+    };
+    
+    // Remove the amount field if it exists to avoid schema errors
+    delete dataToInsert.amount;
+
+    const { data, error } = await supabase
+      .from('budget_goals')
+      .insert([dataToInsert])
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          icon,
+          type,
+          color
+        )
+      `)
+      .single();
+
+    if (error) {
+      console.error('Supabase error details:', error);
+      throw error;
+    }
+    
+    console.log('Budget goal created successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error creating budget goal:', error);
+    throw new Error('Failed to create budget goal: ' + error.message);
+  }
+},
+
+  async updateBudgetGoal(goalId, updates) {
+    try {
+      // Use budgeted_amount instead of amount to match your schema
+      const dataToUpdate = { ...updates };
+      
+      if (dataToUpdate.amount !== undefined) {
+        dataToUpdate.budgeted_amount = parseFloat(dataToUpdate.amount) || 0;
+        delete dataToUpdate.amount;
+      }
+
+      const { data, error } = await supabase
+        .from('budget_goals')
+        .update(dataToUpdate)
+        .eq('id', goalId)
+        .select(`
+          *,
+          categories (
+            id,
+            name,
+            icon,
+            type,
+            color
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating budget goal:', error);
+      throw new Error('Failed to update budget goal');
+    }
+  },
+
+  async deleteBudgetGoal(goalId) {
+    try {
+      const { error } = await supabase
+        .from('budget_goals')
+        .delete()
+        .eq('id', goalId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting budget goal:', error);
+      throw new Error('Failed to delete budget goal');
+    }
+  },
+
   // Real-time subscriptions
   subscribeToTransactions(userId, callback) {
     const subscription = supabase
@@ -202,6 +368,25 @@ export const budgetService = {
           event: '*',
           schema: 'public',
           table: 'categories',
+          filter: `user_id=eq.${userId}`
+        },
+        callback
+      )
+      .subscribe();
+
+    return () => subscription.unsubscribe();
+  },
+
+  // Real-time subscription for budget goals
+  subscribeToBudgetGoals(userId, callback) {
+    const subscription = supabase
+      .channel('budget-goals-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'budget_goals',
           filter: `user_id=eq.${userId}`
         },
         callback

@@ -9,40 +9,42 @@ const BudgetModal = ({
   onClose, 
   onSave, 
   editingBudget = null, 
-  categories = [] 
+  categories = [],
+  saving = false
 }) => {
   const [formData, setFormData] = useState({
-    categoryId: '',
-    budgetedAmount: '',
-    timePeriod: 'monthly'
+    category_id: '',
+    amount: '',
+    period: 'monthly'
   });
   const [errors, setErrors] = useState({});
 
   const timePeriodOptions = [
     { value: 'weekly', label: 'Weekly' },
     { value: 'monthly', label: 'Monthly' },
-    { value: 'quarterly', label: 'Quarterly' },
     { value: 'yearly', label: 'Yearly' }
   ];
 
   useEffect(() => {
     if (editingBudget) {
+      console.log('Editing budget:', editingBudget);
       setFormData({
-        categoryId: editingBudget?.categoryId || '',
-        budgetedAmount: editingBudget?.budgetedAmount?.toString(),
-        timePeriod: editingBudget?.timePeriod || 'monthly'
+        category_id: editingBudget.category_id || editingBudget.categoryId || '',
+        amount: editingBudget.budgeted_amount?.toString() || editingBudget.budgetedAmount?.toString() || editingBudget.amount?.toString() || '',
+        period: editingBudget.period || editingBudget.timePeriod || 'monthly'
       });
     } else {
       setFormData({
-        categoryId: '',
-        budgetedAmount: '',
-        timePeriod: 'monthly'
+        category_id: '',
+        amount: '',
+        period: 'monthly'
       });
     }
     setErrors({});
   }, [editingBudget, isOpen]);
 
   const handleInputChange = (field, value) => {
+    console.log(`Field ${field} changed to:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -59,14 +61,14 @@ const BudgetModal = ({
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData?.categoryId) {
-      newErrors.categoryId = 'Please select a category';
+    if (!formData?.category_id) {
+      newErrors.category_id = 'Please select a category';
     }
 
-    if (!formData?.budgetedAmount) {
-      newErrors.budgetedAmount = 'Please enter a budget amount';
-    } else if (isNaN(formData?.budgetedAmount) || parseFloat(formData?.budgetedAmount) <= 0) {
-      newErrors.budgetedAmount = 'Please enter a valid amount greater than 0';
+    if (!formData?.amount) {
+      newErrors.amount = 'Please enter a budget amount';
+    } else if (isNaN(formData?.amount) || parseFloat(formData?.amount) <= 0) {
+      newErrors.amount = 'Please enter a valid amount greater than 0';
     }
 
     setErrors(newErrors);
@@ -75,17 +77,21 @@ const BudgetModal = ({
 
   const handleSubmit = (e) => {
     e?.preventDefault();
+    console.log('Form submitted with data:', formData);
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
     const budgetData = {
-      ...formData,
-      budgetedAmount: parseFloat(formData?.budgetedAmount),
-      id: editingBudget?.id || Date.now()
+      category_id: formData.category_id,
+      amount: formData.amount,
+      period: formData.period
     };
 
+    console.log('Calling onSave with data:', budgetData);
     onSave(budgetData);
-    onClose();
   };
 
   const categoryOptions = categories?.map(category => ({
@@ -114,9 +120,9 @@ const BudgetModal = ({
             label="Category"
             placeholder="Select a category"
             options={categoryOptions}
-            value={formData?.categoryId}
-            onChange={(value) => handleInputChange('categoryId', value)}
-            error={errors?.categoryId}
+            value={formData?.category_id}
+            onChange={(value) => handleInputChange('category_id', value)}
+            error={errors?.category_id}
             required
             searchable
           />
@@ -125,9 +131,9 @@ const BudgetModal = ({
             label="Budget Amount"
             type="number"
             placeholder="Enter budget amount"
-            value={formData?.budgetedAmount}
-            onChange={(e) => handleInputChange('budgetedAmount', e?.target?.value)}
-            error={errors?.budgetedAmount}
+            value={formData?.amount}
+            onChange={(e) => handleInputChange('amount', e?.target?.value)}
+            error={errors?.amount}
             required
             min="0"
             step="0.01"
@@ -137,17 +143,17 @@ const BudgetModal = ({
             label="Time Period"
             placeholder="Select time period"
             options={timePeriodOptions}
-            value={formData?.timePeriod}
-            onChange={(value) => handleInputChange('timePeriod', value)}
+            value={formData?.period}
+            onChange={(value) => handleInputChange('period', value)}
             required
           />
 
           <div className="flex items-center justify-end space-x-3 pt-4">
-            <Button variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" variant="default">
-              {editingBudget ? 'Update Budget' : 'Create Budget'}
+            <Button type="submit" variant="default" disabled={saving}>
+              {saving ? 'Saving...' : (editingBudget ? 'Update Budget' : 'Create Budget')}
             </Button>
           </div>
         </form>
