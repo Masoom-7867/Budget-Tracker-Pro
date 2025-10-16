@@ -10,6 +10,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
   const [subtractError, setSubtractError] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const validateAmount = (amount, type) => {
     const numAmount = parseFloat(amount);
@@ -29,7 +30,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
     return '';
   };
 
-  const handleAddMoney = () => {
+  const handleAddMoney = async () => {
     const error = validateAmount(addAmount, 'add');
     setAddError(error);
     
@@ -39,13 +40,18 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
         setPendingAction({ type: 'add', amount });
         setShowConfirmDialog(true);
       } else {
-        onAddMoney(amount);
-        setAddAmount('');
+        setLoading(true);
+        try {
+          await onAddMoney(amount);
+          setAddAmount('');
+        } finally {
+          setLoading(false);
+        }
       }
     }
   };
 
-  const handleSubtractMoney = () => {
+  const handleSubtractMoney = async () => {
     const error = validateAmount(subtractAmount, 'subtract');
     setSubtractError(error);
     
@@ -55,22 +61,32 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
         setPendingAction({ type: 'subtract', amount });
         setShowConfirmDialog(true);
       } else {
-        onSubtractMoney(amount);
-        setSubtractAmount('');
+        setLoading(true);
+        try {
+          await onSubtractMoney(amount);
+          setSubtractAmount('');
+        } finally {
+          setLoading(false);
+        }
       }
     }
   };
 
-  const confirmAction = () => {
-    if (pendingAction?.type === 'add') {
-      onAddMoney(pendingAction?.amount);
-      setAddAmount('');
-    } else {
-      onSubtractMoney(pendingAction?.amount);
-      setSubtractAmount('');
+  const confirmAction = async () => {
+    setLoading(true);
+    try {
+      if (pendingAction?.type === 'add') {
+        await onAddMoney(pendingAction?.amount);
+        setAddAmount('');
+      } else {
+        await onSubtractMoney(pendingAction?.amount);
+        setSubtractAmount('');
+      }
+    } finally {
+      setShowConfirmDialog(false);
+      setPendingAction(null);
+      setLoading(false);
     }
-    setShowConfirmDialog(false);
-    setPendingAction(null);
   };
 
   const cancelAction = () => {
@@ -139,11 +155,11 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
               variant="success"
               fullWidth
               onClick={handleAddMoney}
-              disabled={!addAmount}
+              disabled={!addAmount || loading}
               iconName="Plus"
               iconPosition="left"
             >
-              Add to Savings
+              {loading ? 'Processing...' : 'Add to Savings'}
             </Button>
           </div>
         </div>
@@ -206,11 +222,11 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
               variant="warning"
               fullWidth
               onClick={handleSubtractMoney}
-              disabled={!subtractAmount || currentBalance <= 0}
+              disabled={!subtractAmount || currentBalance <= 0 || loading}
               iconName="Minus"
               iconPosition="left"
             >
-              Withdraw from Savings
+              {loading ? 'Processing...' : 'Withdraw from Savings'}
             </Button>
           </div>
         </div>
@@ -260,6 +276,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
                 variant="outline"
                 fullWidth
                 onClick={cancelAction}
+                disabled={loading}
               >
                 Cancel
               </Button>
@@ -267,8 +284,9 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
                 variant={pendingAction?.type === 'add' ? 'success' : 'warning'}
                 fullWidth
                 onClick={confirmAction}
+                disabled={loading}
               >
-                Confirm
+                {loading ? 'Processing...' : 'Confirm'}
               </Button>
             </div>
           </div>
