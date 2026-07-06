@@ -19,7 +19,7 @@ const RecentTransactions = ({ transactions = [] }) => {
             <Icon name="Receipt" size={32} color="var(--color-muted-foreground)" className="mx-auto mb-2 opacity-50" />
             <p className="text-muted-foreground mb-3">No recent transactions</p>
             <button 
-              onClick={() => navigate('/transactions')}
+              onClick={() => navigate('/transaction-management')}
               className="text-primary hover:underline text-sm"
             >
               Add your first transaction
@@ -54,7 +54,7 @@ const RecentTransactions = ({ transactions = [] }) => {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-foreground">Recent Transactions</h2>
         <button 
-          onClick={() => navigate('/transactions')}
+          onClick={() => navigate('/transaction-management')}
           className="text-primary hover:underline text-sm flex items-center space-x-1"
         >
           <span>View All</span>

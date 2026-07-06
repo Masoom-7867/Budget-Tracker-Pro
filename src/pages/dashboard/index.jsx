@@ -300,7 +300,7 @@ const Dashboard = () => {
           </div>
 
           {/* Monthly & Yearly Report */}
-          <div className="mb-8">
+          <div id="reports-section" className="mb-8">
             <MonthlyYearlyReport 
               transactions={transactions}
               financialData={financialData}

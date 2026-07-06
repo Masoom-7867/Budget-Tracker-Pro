@@ -9,5 +9,6 @@ if (!supabaseUrl || !supabaseKey) {
 
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
-  debug: true, // Optional: enable detailed logging to console for debugging
+  // Only log verbose Supabase traffic in local dev, never in production builds
+  debug: import.meta.env?.DEV === true,
 });

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import Header from '../../components/ui/Header';
 import CategoryStats from './components/CategoryStats';
 import CategorySection from './components/CategorySection';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { budgetService } from '../../services/budgetService';
 
 const CategoryManager = () => {
+  const { user } = useAuth();
   const [incomeCategories, setIncomeCategories] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [incomeSearchTerm, setIncomeSearchTerm] = useState('');
@@ -43,34 +45,30 @@ const CategoryManager = () => {
     lastUsed: formatLastUsed(category.last_used)
   });
 
-  // Fetch categories from Supabase
+  // Fetch categories from Supabase (scoped to the signed-in user, via the
+  // shared budgetService so every page talks to the DB the same way)
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (user?.id) {
+      fetchCategories();
+    }
+  }, [user?.id]);
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
+      const data = await budgetService.getCategories(user.id);
 
-      if (error) throw error;
+      const normalizedData = (data || []).map(normalizeCategory);
+      const income = normalizedData.filter(cat => cat.type === 'income');
+      const expense = normalizedData.filter(cat => cat.type === 'expense');
 
-      if (data) {
-        const normalizedData = data.map(normalizeCategory);
-        const income = normalizedData.filter(cat => cat.type === 'income');
-        const expense = normalizedData.filter(cat => cat.type === 'expense');
-        
-        setIncomeCategories(income);
-        setExpenseCategories(expense);
-      }
+      setIncomeCategories(income);
+      setExpenseCategories(expense);
     } catch (err) {
       console.error('Error fetching categories:', err);
-      setError('Failed to load categories: ' + err.message);
+      setError(err.message || 'Failed to load categories');
     } finally {
       setLoading(false);
     }
@@ -91,6 +89,7 @@ const CategoryManager = () => {
       }
 
       const newCategory = {
+        user_id: user.id, // required: RLS policy checks user_id = auth.uid()
         name: categoryData.name.trim(),
         description: categoryData.description?.trim() || null, // Use null instead of empty string
         icon: categoryData.icon || (categoryData.type === 'income' ? 'DollarSign' : 'Minus'),
@@ -99,20 +98,7 @@ const CategoryManager = () => {
         last_used: null
       };
 
-      console.log('Sending to Supabase:', newCategory);
-
-      const { data, error } = await supabase
-        .from('categories')
-        .insert([newCategory])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      console.log('Category added successfully:', data);
+      const data = await budgetService.createCategory(newCategory);
 
       if (data) {
         const normalizedCategory = normalizeCategory(data);
@@ -124,7 +110,7 @@ const CategoryManager = () => {
       }
     } catch (err) {
       console.error('Error adding category:', err);
-      setError('Failed to add category: ' + (err.message || 'Unknown error'));
+      setError(err.message || 'Failed to add category');
     }
   };
 
@@ -132,17 +118,10 @@ const CategoryManager = () => {
     try {
       setError(null);
 
-      const { data, error } = await supabase
-        .from('categories')
-        .update({
-          name: updatedData.name,
-          description: updatedData.description
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await budgetService.updateCategory(id, {
+        name: updatedData.name,
+        description: updatedData.description
+      });
 
       if (data) {
         const normalizedCategory = normalizeCategory(data);
@@ -156,7 +135,7 @@ const CategoryManager = () => {
       }
     } catch (err) {
       console.error('Error updating category:', err);
-      setError('Failed to update category: ' + err.message);
+      setError(err.message || 'Failed to update category');
     }
   };
 
@@ -164,18 +143,13 @@ const CategoryManager = () => {
     try {
       setError(null);
 
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await budgetService.deleteCategory(id);
 
       setIncomeCategories(prev => prev.filter(cat => cat.id !== id));
       setExpenseCategories(prev => prev.filter(cat => cat.id !== id));
     } catch (err) {
       console.error('Error deleting category:', err);
-      setError('Failed to delete category: ' + err.message);
+      setError(err.message || 'Failed to delete category');
     }
   };
 

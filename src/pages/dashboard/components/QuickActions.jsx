@@ -13,7 +13,7 @@ const QuickActions = () => {
       icon: 'Plus',
       color: 'var(--color-success)',
       bgColor: 'bg-success/10',
-      onClick: () => navigate('/transactions')
+      onClick: () => navigate('/transaction-management')
     },
     {
       id: 2,
@@ -22,7 +22,7 @@ const QuickActions = () => {
       icon: 'Folder',
       color: 'var(--color-primary)',
       bgColor: 'bg-primary/10',
-      onClick: () => navigate('/categories')
+      onClick: () => navigate('/category-manager')
     },
     {
       id: 3,
@@ -40,7 +40,9 @@ const QuickActions = () => {
       icon: 'BarChart3',
       color: 'var(--color-secondary)',
       bgColor: 'bg-secondary/10',
-      onClick: () => navigate('/reports')
+      // There is no standalone /reports route - the report lives inline on
+      // this dashboard, so scroll to it instead of navigating to a 404.
+      onClick: () => document.getElementById('reports-section')?.scrollIntoView({ behavior: 'smooth' })
     }
   ];
 
