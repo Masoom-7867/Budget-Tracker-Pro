@@ -91,11 +91,11 @@ const CategoryManager = () => {
       const newCategory = {
         user_id: user.id, // required: RLS policy checks user_id = auth.uid()
         name: categoryData.name.trim(),
-        description: categoryData.description?.trim() || null, // Use null instead of empty string
+        description: categoryData.description?.trim() || null,
         icon: categoryData.icon || (categoryData.type === 'income' ? 'DollarSign' : 'Minus'),
-        type: categoryData.type,
-        transaction_count: 0,
-        last_used: null
+        type: categoryData.type
+        // Note: `transaction_count` / `last_used` are NOT real columns on
+        // this table (there's no UI to set them either) - don't send them.
       };
 
       const data = await budgetService.createCategory(newCategory);
@@ -120,7 +120,8 @@ const CategoryManager = () => {
 
       const data = await budgetService.updateCategory(id, {
         name: updatedData.name,
-        description: updatedData.description
+        description: updatedData.description,
+        icon: updatedData.icon
       });
 
       if (data) {
