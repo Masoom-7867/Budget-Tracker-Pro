@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
-const LoginForm = () => {
+const LoginForm = ({ onSwitchToSignup }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -80,6 +80,16 @@ const LoginForm = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
+
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={onSwitchToSignup}
+            className="text-sm text-primary hover:underline"
+          >
+            Don't have an account? Sign up
+          </button>
+        </div>
 
         {/* Demo Credentials Section */}
         <div className="mt-8 pt-6 border-t border-border">

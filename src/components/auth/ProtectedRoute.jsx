@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginForm from './LoginForm';
+import SignupForm from './SignupForm';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const [authView, setAuthView] = useState('login'); // 'login' | 'signup'
 
   if (loading) {
     return (
@@ -19,7 +21,11 @@ const ProtectedRoute = ({ children }) => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <LoginForm />
+        {authView === 'login' ? (
+          <LoginForm onSwitchToSignup={() => setAuthView('signup')} />
+        ) : (
+          <SignupForm onSwitchToLogin={() => setAuthView('login')} />
+        )}
       </div>
     );
   }
