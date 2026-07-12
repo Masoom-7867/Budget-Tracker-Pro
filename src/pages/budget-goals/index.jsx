@@ -178,10 +178,11 @@ const BudgetGoals = () => {
     if (window.confirm('Are you sure you want to delete this budget goal?')) {
       try {
         await budgetService.deleteBudgetGoal(budgetId);
-        // The real-time subscription will update the list automatically
       } catch (error) {
         console.error('Error deleting budget goal:', error);
         setError('Failed to delete budget goal: ' + error.message);
+      } finally {
+        await loadBudgetData();
       }
     }
   };
@@ -246,11 +247,16 @@ const BudgetGoals = () => {
       
       setIsModalOpen(false);
       setEditingBudget(null);
-      // The real-time subscription will update the list automatically
     } catch (error) {
       console.error('Error saving budget goal:', error);
       setError('Failed to save budget goal: ' + error.message);
     } finally {
+      // Always reload, even on error: the insert/update can succeed in the
+      // database but still throw here (e.g. the response's embedded
+      // categories join failing) - in that case the goal is actually saved,
+      // so without an unconditional reload here it would only show up after
+      // a full browser refresh, not immediately in the list.
+      await loadBudgetData();
       setSaving(false);
     }
   };
