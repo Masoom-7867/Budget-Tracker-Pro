@@ -153,6 +153,7 @@ const TransactionManagement = () => {
         ...newTransactionData,
         user_id: user.id
       });
+      refreshData();
     } catch (error) {
       setError(error.message || 'Failed to add transaction');
       throw error;
@@ -229,19 +230,11 @@ const TransactionManagement = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">Transaction Management</h1>
-                <p className="text-muted-foreground">
-                  Add new transactions and manage your financial history with advanced filtering and sorting capabilities.
-                </p>
-              </div>
-              <button
-                onClick={refreshData}
-                className="flex items-center space-x-2 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-              >
-                <span>Refresh Data</span>
-              </button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Transaction Management</h1>
+              <p className="text-muted-foreground">
+                Add new transactions and manage your financial history with advanced filtering and sorting capabilities.
+              </p>
             </div>
           </div>
 
