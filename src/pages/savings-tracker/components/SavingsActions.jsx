@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/currency';
 
 const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
   const [addAmount, setAddAmount] = useState('');
@@ -24,7 +25,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
     }
     
     if (numAmount > 999999.99) {
-      return 'Amount cannot exceed $999,999.99';
+      return 'Amount cannot exceed R999,999.99';
     }
     
     return '';
@@ -131,7 +132,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
                 onClick={() => setAddAmount('100')}
                 className="text-xs"
               >
-                $100
+                R100
               </Button>
               <Button
                 variant="ghost"
@@ -139,7 +140,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
                 onClick={() => setAddAmount('500')}
                 className="text-xs"
               >
-                $500
+                R500
               </Button>
               <Button
                 variant="ghost"
@@ -147,7 +148,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
                 onClick={() => setAddAmount('1000')}
                 className="text-xs"
               >
-                $1,000
+                R1,000
               </Button>
             </div>
             
@@ -198,7 +199,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
                 onClick={() => setSubtractAmount('50')}
                 className="text-xs"
               >
-                $50
+                R50
               </Button>
               <Button
                 variant="ghost"
@@ -206,7 +207,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
                 onClick={() => setSubtractAmount('200')}
                 className="text-xs"
               >
-                $200
+                R200
               </Button>
               <Button
                 variant="ghost"
@@ -214,7 +215,7 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
                 onClick={() => setSubtractAmount('500')}
                 className="text-xs"
               >
-                $500
+                R500
               </Button>
             </div>
             
@@ -260,13 +261,13 @@ const SavingsActions = ({ onAddMoney, onSubtractMoney, currentBalance }) => {
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Amount:</span>
                 <span className="font-semibold text-foreground">
-                  ${pendingAction?.amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {formatCurrency(pendingAction?.amount)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">New Balance:</span>
                 <span className="font-semibold text-foreground">
-                  ${(pendingAction?.type === 'add' ? currentBalance + pendingAction?.amount : currentBalance - pendingAction?.amount)?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {formatCurrency(pendingAction?.type === 'add' ? currentBalance + pendingAction?.amount : currentBalance - pendingAction?.amount)}
                 </span>
               </div>
             </div>

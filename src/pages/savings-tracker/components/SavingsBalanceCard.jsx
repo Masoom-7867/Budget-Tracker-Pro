@@ -1,15 +1,8 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/currency';
 
 const SavingsBalanceCard = ({ balance }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    })?.format(amount);
-  };
-
   return (
     <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-8 text-white shadow-lg">
       <div className="flex items-center justify-between mb-4">

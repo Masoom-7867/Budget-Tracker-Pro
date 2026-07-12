@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/currency';
 
 const MonthlyYearlyReport = ({ transactions = [], financialData = {} }) => {
   const [activeTab, setActiveTab] = useState('monthly');
@@ -56,13 +57,7 @@ const MonthlyYearlyReport = ({ transactions = [], financialData = {} }) => {
   };
 
   const formatAmount = (value) => {
-    const numValue = parseFloat(value) || 0;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(numValue);
+    return formatCurrency(value, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
   return (

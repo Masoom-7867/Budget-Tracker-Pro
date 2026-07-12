@@ -1,16 +1,9 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import { formatCurrency } from '../../../utils/currency';
 
 const SavingsHistory = ({ transactions, onDeleteTransaction }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    })?.format(amount);
-  };
-
   const formatDate = (date) => {
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',

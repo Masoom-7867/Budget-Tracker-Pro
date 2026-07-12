@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/currency';
 
 const CategoryBreakdown = ({ categories = [] }) => {
   if (!categories || categories.length === 0) {
@@ -19,14 +20,7 @@ const CategoryBreakdown = ({ categories = [] }) => {
     );
   }
 
-  const formatAmount = (value) => {
-    const numValue = parseFloat(value) || 0;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(numValue);
-  };
+  const formatAmount = (value) => formatCurrency(value);
 
   const getProgressPercentage = (spent, budget) => {
     const spentNum = parseFloat(spent) || 0;

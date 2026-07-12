@@ -44,7 +44,7 @@ const Header = () => {
           <div className="flex items-center">
             <div className="flex items-center">
               <div className="bg-primary rounded-lg p-2">
-                <Icon name="PiggyBank" size={24} className="text-primary-foreground" />
+                <Icon name="BarChart3" size={24} className="text-primary-foreground" />
               </div>
               <div className="ml-3">
                 <h1 className="text-xl font-bold text-foreground">BudgetTracker Pro</h1>

@@ -1,14 +1,8 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency as formatAmount } from '../../../utils/currency';
 
 const SummaryCard = ({ title, amount, type, icon, trend }) => {
-  const formatAmount = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount || 0);
-  };
-
   const getColorClass = (type) => {
     switch (type) {
       case 'income': return 'text-success';

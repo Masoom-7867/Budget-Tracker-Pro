@@ -1,6 +1,7 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '../../../utils/currency';
 
 const RecentTransactions = ({ transactions = [] }) => {
   const navigate = useNavigate();
@@ -32,10 +33,7 @@ const RecentTransactions = ({ transactions = [] }) => {
 
   const formatAmount = (amount, type) => {
     const numAmount = parseFloat(amount) || 0;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(type === 'income' ? numAmount : -numAmount);
+    return formatCurrency(type === 'income' ? numAmount : -numAmount);
   };
 
   const formatDate = (dateString) => {

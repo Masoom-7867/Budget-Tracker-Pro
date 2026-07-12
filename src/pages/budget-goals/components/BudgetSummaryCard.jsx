@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/currency';
 
 const BudgetSummaryCard = ({ totalBudget, totalSpent, remainingBalance, completionPercentage }) => {
   const getProgressColor = () => {
@@ -25,16 +26,16 @@ const BudgetSummaryCard = ({ totalBudget, totalSpent, remainingBalance, completi
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="text-center">
           <p className="text-sm text-muted-foreground mb-1">Total Budget</p>
-          <p className="text-2xl font-bold text-foreground">${totalBudget?.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-foreground">{formatCurrency(totalBudget)}</p>
         </div>
         <div className="text-center">
           <p className="text-sm text-muted-foreground mb-1">Total Spent</p>
-          <p className="text-2xl font-bold text-foreground">${totalSpent?.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-foreground">{formatCurrency(totalSpent)}</p>
         </div>
         <div className="text-center">
           <p className="text-sm text-muted-foreground mb-1">Remaining</p>
           <p className={`text-2xl font-bold ${remainingBalance >= 0 ? 'text-success' : 'text-error'}`}>
-            ${Math.abs(remainingBalance)?.toLocaleString()}
+            {formatCurrency(Math.abs(remainingBalance))}
           </p>
         </div>
       </div>
@@ -53,8 +54,8 @@ const BudgetSummaryCard = ({ totalBudget, totalSpent, remainingBalance, completi
         </div>
         <p className="text-xs text-muted-foreground">
           {remainingBalance >= 0 
-            ? `You have $${remainingBalance?.toLocaleString()} remaining in your budget`
-            : `You are $${Math.abs(remainingBalance)?.toLocaleString()} over budget`
+            ? `You have ${formatCurrency(remainingBalance)} remaining in your budget`
+            : `You are ${formatCurrency(Math.abs(remainingBalance))} over budget`
           }
         </p>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/currency';
 
 const TransactionTable = ({ 
   transactions, 
@@ -47,12 +48,8 @@ const TransactionTable = ({
   };
 
   const formatAmount = (amount, type) => {
-    const formattedAmount = Math.abs(amount).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-    
-    return type === 'income' ? `+$${formattedAmount}` : `-$${formattedAmount}`;
+    const sign = type === 'income' ? '+' : '-';
+    return `${sign}${formatCurrency(Math.abs(amount))}`;
   };
 
   // Get category display name

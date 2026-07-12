@@ -2,6 +2,7 @@ import React from 'react';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/currency';
 
 const TransactionFilters = ({ 
   filters, 
@@ -116,10 +117,7 @@ const TransactionFilters = ({
             <span className={`font-medium ${
               totalFilteredAmount >= 0 ? 'text-success' : 'text-error'
             }`}>
-              Total: {totalFilteredAmount >= 0 ? '+' : '-'}${Math.abs(totalFilteredAmount).toLocaleString('en-US', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
-              })}
+              Total: {totalFilteredAmount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(totalFilteredAmount))}
             </span>
           )}
         </div>

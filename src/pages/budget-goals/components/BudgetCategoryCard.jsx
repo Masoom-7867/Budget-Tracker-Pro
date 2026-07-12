@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import { formatCurrency } from '../../../utils/currency';
 
 const BudgetCategoryCard = ({ 
   category, 
@@ -58,7 +59,7 @@ const BudgetCategoryCard = ({
                   {getStatusText()}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  ${spentAmount?.toLocaleString()} / ${budgetedAmount?.toLocaleString()}
+                  {formatCurrency(spentAmount)} / {formatCurrency(budgetedAmount)}
                 </span>
               </div>
             </div>
@@ -66,7 +67,7 @@ const BudgetCategoryCard = ({
           <div className="flex items-center space-x-2">
             <div className="text-right">
               <p className={`text-sm font-semibold ${remainingAmount >= 0 ? 'text-success' : 'text-error'}`}>
-                ${Math.abs(remainingAmount)?.toLocaleString()}
+                {formatCurrency(Math.abs(remainingAmount))}
               </p>
               <p className="text-xs text-muted-foreground">
                 {remainingAmount >= 0 ? 'remaining' : 'over budget'}
@@ -99,16 +100,16 @@ const BudgetCategoryCard = ({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div>
               <p className="text-xs text-muted-foreground">Budgeted</p>
-              <p className="text-sm font-semibold text-foreground">${budgetedAmount?.toLocaleString()}</p>
+              <p className="text-sm font-semibold text-foreground">{formatCurrency(budgetedAmount)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Spent</p>
-              <p className="text-sm font-semibold text-foreground">${spentAmount?.toLocaleString()}</p>
+              <p className="text-sm font-semibold text-foreground">{formatCurrency(spentAmount)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Remaining</p>
               <p className={`text-sm font-semibold ${remainingAmount >= 0 ? 'text-success' : 'text-error'}`}>
-                ${Math.abs(remainingAmount)?.toLocaleString()}
+                {formatCurrency(Math.abs(remainingAmount))}
               </p>
             </div>
             <div>

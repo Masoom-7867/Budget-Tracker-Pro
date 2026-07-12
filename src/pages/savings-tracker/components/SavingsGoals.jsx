@@ -3,6 +3,7 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import { formatCurrency } from '../../../utils/currency';
 
 const SavingsGoals = ({ goals, currentBalance, onCreateGoal, onUpdateGoal, onDeleteGoal }) => {
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -26,14 +27,6 @@ const SavingsGoals = ({ goals, currentBalance, onCreateGoal, onUpdateGoal, onDel
     { value: 'Shield', label: 'Emergency' },
     { value: 'Briefcase', label: 'Business' }
   ];
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    })?.format(amount);
-  };
 
   const calculateProgress = (target) => {
     return Math.min((currentBalance / target) * 100, 100);

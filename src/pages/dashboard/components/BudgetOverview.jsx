@@ -2,19 +2,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import { formatCurrency } from '../../../utils/currency';
 
 const BudgetOverview = ({ budgetGoals = [] }) => {
   // Safe data access with defaults
   const safeBudgetGoals = Array.isArray(budgetGoals) ? budgetGoals : [];
 
-  const formatAmount = (value) => {
-    const numValue = parseFloat(value) || 0;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(numValue);
-  };
+  const formatAmount = (value) => formatCurrency(value);
 
   const getProgressPercentage = (spent, budget) => {
     const spentNum = parseFloat(spent) || 0;
