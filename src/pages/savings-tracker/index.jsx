@@ -95,11 +95,15 @@ const SavingsTracker = () => {
 
       console.log('Creating deposit transaction:', transactionData);
       await budgetService.createSavingsTransaction(transactionData);
-      // The real-time subscription will update the data automatically
-      
     } catch (error) {
       console.error('Error adding money:', error);
       setError('Failed to add money: ' + error.message);
+    } finally {
+      // Don't rely solely on the realtime subscription - it depends on
+      // savings_transactions being added to Supabase's realtime publication,
+      // which isn't guaranteed, and silently not firing leaves the balance
+      // looking stale until a full browser refresh. Reload explicitly.
+      await loadSavingsData();
     }
   };
 
@@ -122,11 +126,11 @@ const SavingsTracker = () => {
 
       console.log('Creating withdrawal transaction:', transactionData);
       await budgetService.createSavingsTransaction(transactionData);
-      // The real-time subscription will update the data automatically
-      
     } catch (error) {
       console.error('Error subtracting money:', error);
       setError('Failed to subtract money: ' + error.message);
+    } finally {
+      await loadSavingsData();
     }
   };
 
@@ -134,10 +138,11 @@ const SavingsTracker = () => {
     try {
       setError('');
       await budgetService.deleteSavingsTransaction(transactionId);
-      // The real-time subscription will update the data automatically
     } catch (error) {
       console.error('Error deleting transaction:', error);
       setError('Failed to delete transaction: ' + error.message);
+    } finally {
+      await loadSavingsData();
     }
   };
 
@@ -157,11 +162,11 @@ const SavingsTracker = () => {
 
       console.log('Processed goal data for creation:', goalWithUser);
       await budgetService.createSavingsGoal(goalWithUser);
-      // The real-time subscription will update the data automatically
-      
     } catch (error) {
       console.error('Error creating savings goal:', error);
       setError('Failed to create savings goal: ' + error.message);
+    } finally {
+      await loadSavingsData();
     }
   };
 
@@ -178,11 +183,11 @@ const SavingsTracker = () => {
       };
 
       await budgetService.updateSavingsGoal(goalId, updatesWithNumbers);
-      // The real-time subscription will update the data automatically
-      
     } catch (error) {
       console.error('Error updating savings goal:', error);
       setError('Failed to update savings goal: ' + error.message);
+    } finally {
+      await loadSavingsData();
     }
   };
 
@@ -190,10 +195,11 @@ const SavingsTracker = () => {
     try {
       setError('');
       await budgetService.deleteSavingsGoal(goalId);
-      // The real-time subscription will update the data automatically
     } catch (error) {
       console.error('Error deleting savings goal:', error);
       setError('Failed to delete savings goal: ' + error.message);
+    } finally {
+      await loadSavingsData();
     }
   };
 
