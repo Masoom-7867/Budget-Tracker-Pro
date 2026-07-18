@@ -657,7 +657,7 @@ export const budgetService = {
     }
   },
 
-
+  subscribeToBudgetGoals(userId, callback) {
     const subscription = supabase
       .channel('budget-goals-changes')
       .on(
