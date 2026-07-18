@@ -2,10 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { budgetService } from '../../services/budgetService';
 import Header from '../../components/ui/Header';
+import Icon from '../../components/AppIcon';
+import Button from '../../components/ui/Button';
 import TransactionForm from './components/TransactionForm';
 import TransactionFilters from './components/TransactionFilters';
 import TransactionTable from './components/TransactionTable';
 import EditTransactionModal from './components/EditTransactionModal';
+import ImportCSVModal from './components/ImportCSVModal';
 
 const TransactionManagement = () => {
   const { user } = useAuth();
@@ -14,6 +17,7 @@ const TransactionManagement = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Filter and sort state
   const [filters, setFilters] = useState({
@@ -230,11 +234,21 @@ const TransactionManagement = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Transaction Management</h1>
-              <p className="text-muted-foreground">
-                Add new transactions and manage your financial history with advanced filtering and sorting capabilities.
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Transaction Management</h1>
+                <p className="text-muted-foreground">
+                  Add new transactions and manage your financial history with advanced filtering and sorting capabilities.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                iconName="Upload"
+                iconPosition="left"
+                onClick={() => setIsImportModalOpen(true)}
+              >
+                Import CSV
+              </Button>
             </div>
           </div>
 
@@ -298,6 +312,15 @@ const TransactionManagement = () => {
           setEditingTransaction(null);
         }}
         onSave={handleSaveTransaction}
+        categories={categories}
+      />
+
+      {/* Import CSV Modal */}
+      <ImportCSVModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportComplete={refreshData}
+        userId={user?.id}
         categories={categories}
       />
     </div>

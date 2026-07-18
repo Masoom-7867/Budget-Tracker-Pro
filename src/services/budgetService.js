@@ -527,9 +527,23 @@ export const budgetService = {
     return () => subscription.unsubscribe();
   },
 
-  // =====================================
-  // Monthly 50/30/20 Budget Breakdown
-  // =====================================
+  // Bulk insert used by CSV import - one round trip instead of one per row.
+  async createTransactionsBulk(transactionsData) {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert(transactionsData)
+        .select();
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error bulk creating transactions:', error);
+      throw error;
+    }
+  },
+
+
 
   async getMonthlyBudget(userId, month, year) {
     try {
