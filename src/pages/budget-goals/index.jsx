@@ -8,6 +8,7 @@ import BudgetSummaryCard from './components/BudgetSummaryCard';
 import BudgetCategoryCard from './components/BudgetCategoryCard';
 import BudgetModal from './components/BudgetModal';
 import BudgetFilters from './components/BudgetFilters';
+import MonthlyBudgetTab from './components/monthly/MonthlyBudgetTab';
 
 const BudgetGoals = () => {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ const BudgetGoals = () => {
   const [expandedCards, setExpandedCards] = useState(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
+  const [activeTab, setActiveTab] = useState('list'); // 'list' | 'monthly'
   const [filters, setFilters] = useState({
     category: '',
     status: '',
@@ -332,17 +334,41 @@ const BudgetGoals = () => {
               </p>
             </div>
             <div className="mt-4 sm:mt-0">
-              <Button 
-                variant="default" 
-                iconName="Plus" 
-                iconPosition="left"
-                onClick={handleAddBudget}
-              >
-                Add Budget Goal
-              </Button>
+              {activeTab === 'list' && (
+                <Button 
+                  variant="default" 
+                  iconName="Plus" 
+                  iconPosition="left"
+                  onClick={handleAddBudget}
+                >
+                  Add Budget Goal
+                </Button>
+              )}
             </div>
           </div>
 
+          {/* Tabs */}
+          <div className="flex items-center gap-1 mb-6 border-b border-border">
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'list' ?'border-primary text-primary' :'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Budget List
+            </button>
+            <button
+              onClick={() => setActiveTab('monthly')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'monthly' ?'border-primary text-primary' :'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Monthly Breakdown (50/30/20)
+            </button>
+          </div>
+
+          {activeTab === 'list' && (
+          <>
           {/* Error Display */}
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
@@ -436,6 +462,12 @@ const BudgetGoals = () => {
                 Showing {filteredBudgets.length} of {budgetGoals.length} budget goal{filteredBudgets.length !== 1 ? 's' : ''}
               </p>
             </div>
+          )}
+          </>
+          )}
+
+          {activeTab === 'monthly' && (
+            <MonthlyBudgetTab userId={user?.id} categories={categories} />
           )}
         </div>
       </main>

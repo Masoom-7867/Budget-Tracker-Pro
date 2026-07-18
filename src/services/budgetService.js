@@ -527,7 +527,137 @@ export const budgetService = {
     return () => subscription.unsubscribe();
   },
 
-  subscribeToBudgetGoals(userId, callback) {
+  // =====================================
+  // Monthly 50/30/20 Budget Breakdown
+  // =====================================
+
+  async getMonthlyBudget(userId, month, year) {
+    try {
+      const { data, error } = await supabase
+        .from('monthly_budgets')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('month', month)
+        .eq('year', year)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data; // null if this month hasn't been set up yet
+    } catch (error) {
+      console.error('Error fetching monthly budget:', error);
+      throw error;
+    }
+  },
+
+  async upsertMonthlyBudget(userId, month, year, monthlyIncome) {
+    try {
+      const { data, error } = await supabase
+        .from('monthly_budgets')
+        .upsert(
+          { user_id: userId, month, year, monthly_income: monthlyIncome },
+          { onConflict: 'user_id,month,year' }
+        )
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error saving monthly budget:', error);
+      throw error;
+    }
+  },
+
+  async getBudgetLineItems(monthlyBudgetId) {
+    try {
+      const { data, error } = await supabase
+        .from('budget_line_items')
+        .select('*')
+        .eq('monthly_budget_id', monthlyBudgetId)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching budget line items:', error);
+      throw error;
+    }
+  },
+
+  async createBudgetLineItem(lineItem) {
+    try {
+      const { data, error } = await supabase
+        .from('budget_line_items')
+        .insert([lineItem])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating budget line item:', error);
+      throw error;
+    }
+  },
+
+  async updateBudgetLineItem(id, updates) {
+    try {
+      const { data, error } = await supabase
+        .from('budget_line_items')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating budget line item:', error);
+      throw error;
+    }
+  },
+
+  async deleteBudgetLineItem(id) {
+    try {
+      const { error } = await supabase
+        .from('budget_line_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting budget line item:', error);
+      throw error;
+    }
+  },
+
+  // Transactions within a given calendar month, used to auto-match line
+  // items against what's actually been paid (for "date paid" + on-track).
+  async getTransactionsByMonth(userId, month, year) {
+    try {
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching transactions for month:', error);
+      throw error;
+    }
+  },
+
+
     const subscription = supabase
       .channel('budget-goals-changes')
       .on(
