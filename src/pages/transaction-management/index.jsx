@@ -9,6 +9,7 @@ import TransactionFilters from './components/TransactionFilters';
 import TransactionTable from './components/TransactionTable';
 import EditTransactionModal from './components/EditTransactionModal';
 import ImportCSVModal from './components/ImportCSVModal';
+import { getMonthToDateRange } from '../../utils/dateRangePresets';
 
 const TransactionManagement = () => {
   const { user } = useAuth();
@@ -19,14 +20,16 @@ const TransactionManagement = () => {
   const [error, setError] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-  // Filter and sort state
-  const [filters, setFilters] = useState({
+  // Filter and sort state - defaults to month-to-date so the page doesn't
+  // dump the user's entire transaction history at once; older data is one
+  // period-filter selection away.
+  const [filters, setFilters] = useState(() => ({
     search: '',
     type: '',
     category: '',
-    dateFrom: '',
-    dateTo: ''
-  });
+    period: 'thisMonth',
+    ...getMonthToDateRange()
+  }));
 
   const [sortConfig, setSortConfig] = useState({
     field: 'date',

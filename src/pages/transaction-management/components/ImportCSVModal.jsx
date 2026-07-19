@@ -38,7 +38,7 @@ const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories 
   const [validRows, setValidRows] = useState([]);
   const [errors, setErrors] = useState([]);
   const [newCategories, setNewCategories] = useState([]);
-  const [stage, setStage] = useState('select'); // 'select' | 'preview' | 'importing' | 'done'
+  const [stage, setStage] = useState('select'); // 'select' | 'preview' | 'importing' | 'done' | 'error'
   const [importResult, setImportResult] = useState(null);
   const [importError, setImportError] = useState('');
   const fileInputRef = useRef(null);
@@ -98,6 +98,7 @@ const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories 
       },
       error: (err) => {
         setImportError(`Failed to parse CSV: ${err.message}`);
+        setStage('error');
       }
     });
   };
@@ -148,7 +149,7 @@ const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories 
     } catch (err) {
       console.error('Import failed:', err);
       setImportError(err.message || 'Import failed');
-      setStage('preview');
+      setStage('error');
     }
   };
 
@@ -238,12 +239,7 @@ const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories 
                 </div>
               )}
 
-              {importError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-800 text-sm">{importError}</p>
-                </div>
-              )}
-
+              
               <div className="flex items-center justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={reset}>Choose Different File</Button>
                 <Button
@@ -276,6 +272,20 @@ const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories 
                 {importResult.skipped > 0 && `, skipped ${importResult.skipped} invalid row${importResult.skipped !== 1 ? 's' : ''}`}.
               </p>
               <Button variant="default" onClick={handleClose}>Done</Button>
+            </div>
+          )}
+
+          {stage === 'error' && (
+            <div className="text-center py-6 space-y-3">
+              <div className="flex items-center justify-center w-14 h-14 bg-error/10 rounded-full mx-auto">
+                <Icon name="XCircle" size={28} className="text-error" />
+              </div>
+              <p className="text-lg font-semibold text-foreground">Import Unsuccessful</p>
+              <p className="text-sm text-muted-foreground">{importError}</p>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <Button variant="outline" onClick={handleClose}>Close</Button>
+                <Button variant="default" onClick={reset}>Try Again</Button>
+              </div>
             </div>
           )}
         </div>

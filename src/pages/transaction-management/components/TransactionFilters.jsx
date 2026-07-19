@@ -3,6 +3,7 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Icon from '../../../components/AppIcon';
 import { formatCurrency } from '../../../utils/currency';
+import { PERIOD_OPTIONS, getPeriodDateRange } from '../../../utils/dateRangePresets';
 
 const TransactionFilters = ({ 
   filters, 
@@ -34,17 +35,43 @@ const TransactionFilters = ({
     });
   };
 
+  // Selecting a period preset computes and applies its date range in one go
+  const handlePeriodChange = (period) => {
+    onFilterChange({
+      ...filters,
+      period,
+      ...getPeriodDateRange(period)
+    });
+  };
+
+  // Editing either date directly means the selection is no longer one of
+  // the named presets - clear `period` so the dropdown reflects "Custom"
+  const handleCustomDateChange = (field, value) => {
+    onFilterChange({
+      ...filters,
+      period: '',
+      [field]: value
+    });
+  };
+
   const clearAllFilters = () => {
     onFilterChange({
       search: '',
       type: '',
       category: '',
+      period: 'allTime',
       dateFrom: '',
       dateTo: ''
     });
   };
 
-  const hasActiveFilters = Object.values(filters).some(value => value !== '');
+  const periodSelectOptions = [
+    { value: '', label: 'Custom Range' },
+    ...PERIOD_OPTIONS
+  ];
+
+  const hasActiveFilters = filters.search !== '' || filters.type !== '' ||
+    filters.category !== '' || filters.period !== 'thisMonth';
 
   return (
     <div className="bg-card rounded-lg border border-border p-6 mb-6">
@@ -94,19 +121,26 @@ const TransactionFilters = ({
           onChange={(value) => handleFilterChange('category', value)}
         />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Select
+          label="Period"
+          options={periodSelectOptions}
+          value={filters.period || ''}
+          onChange={handlePeriodChange}
+        />
+
         <Input
           label="From Date"
           type="date"
           value={filters.dateFrom}
-          onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+          onChange={(e) => handleCustomDateChange('dateFrom', e.target.value)}
         />
 
         <Input
           label="To Date"
           type="date"
           value={filters.dateTo}
-          onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+          onChange={(e) => handleCustomDateChange('dateTo', e.target.value)}
         />
       </div>
       {/* Filter Summary */}
