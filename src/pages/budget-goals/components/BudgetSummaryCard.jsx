@@ -2,7 +2,7 @@ import React from 'react';
 import Icon from '../../../components/AppIcon';
 import { formatCurrency } from '../../../utils/currency';
 
-const BudgetSummaryCard = ({ totalBudget, totalSpent, remainingBalance, completionPercentage }) => {
+const BudgetSummaryCard = ({ totalBudget, totalSpent, remainingBalance, completionPercentage, monthLabel }) => {
   const getProgressColor = () => {
     if (completionPercentage <= 60) return 'bg-success';
     if (completionPercentage <= 80) return 'bg-warning';
@@ -18,7 +18,10 @@ const BudgetSummaryCard = ({ totalBudget, totalSpent, remainingBalance, completi
   return (
     <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Budget Overview</h2>
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">Budget Overview</h2>
+          {monthLabel && <p className="text-sm text-muted-foreground">{monthLabel}</p>}
+        </div>
         <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg">
           <Icon name="Target" size={20} color="var(--color-primary)" />
         </div>

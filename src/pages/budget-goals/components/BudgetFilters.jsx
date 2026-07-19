@@ -9,6 +9,21 @@ const BudgetFilters = ({
   onClearFilters, 
   categories = [] 
 }) => {
+  const currentMonthValue = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+
+  // Current month + the previous 11 months, as discrete whole-month options
+  // (deliberately not a custom date range - just "which month")
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date();
+    d.setDate(1); // avoid month-length rollover issues
+    d.setMonth(d.getMonth() - i);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = i === 0
+      ? `This Month (${d.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })})`
+      : d.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' });
+    return { value, label };
+  });
+
   const statusOptions = [
     { value: '', label: 'All Status' },
     { value: 'on-track', label: 'On Track' },
@@ -35,7 +50,7 @@ const BudgetFilters = ({
     }))
   ];
 
-  const hasActiveFilters = filters?.category || filters?.status || filters?.sortBy !== 'name-asc';
+  const hasActiveFilters = filters?.category || filters?.status || filters?.sortBy !== 'name-asc' || filters?.month !== currentMonthValue;
 
   return (
     <div className="bg-card rounded-lg border border-border p-4">
@@ -56,7 +71,14 @@ const BudgetFilters = ({
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Select
+          label="Month"
+          options={monthOptions}
+          value={filters?.month || currentMonthValue}
+          onChange={(value) => onFilterChange('month', value)}
+        />
+
         <Select
           label="Category"
           placeholder="Filter by category"

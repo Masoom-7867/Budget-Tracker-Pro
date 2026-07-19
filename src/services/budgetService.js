@@ -175,7 +175,7 @@ export const budgetService = {
   },
 
   // Budget Goals
-  async getBudgetGoals(userId) {
+  async getBudgetGoals(userId, month, year) {
     try {
       const { data, error } = await supabase
         .from('budget_goals')
@@ -193,17 +193,28 @@ export const budgetService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Calculate spent amount for each budget goal
+
+      // Default to the current calendar month so "spent" reflects this
+      // month's activity, not the category's entire transaction history.
+      const now = new Date();
+      const targetMonth = month || now.getMonth() + 1;
+      const targetYear = year || now.getFullYear();
+      const startDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01`;
+      const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+      const endDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+      // Calculate spent amount for each budget goal, scoped to that month
       const budgetGoalsWithSpent = await Promise.all(
         (data || []).map(async (budget) => {
-          // Get transactions for this category to calculate spent amount
+          // Get this month's transactions for this category to calculate spent amount
           const { data: transactions } = await supabase
             .from('transactions')
             .select('amount')
             .eq('category_id', budget.category_id)
             .eq('user_id', userId)
-            .eq('type', 'expense');
+            .eq('type', 'expense')
+            .gte('date', startDate)
+            .lte('date', endDate);
 
           const spentAmount = transactions?.reduce((sum, transaction) => 
             sum + (parseFloat(transaction.amount) || 0), 0

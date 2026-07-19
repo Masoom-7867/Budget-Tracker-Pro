@@ -24,13 +24,12 @@ const BudgetGoals = () => {
   const [filters, setFilters] = useState({
     category: '',
     status: '',
-    sortBy: 'name-asc'
+    sortBy: 'name-asc',
+    month: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
   });
 
   useEffect(() => {
     if (user?.id) {
-      loadBudgetData();
-      
       // Set up real-time subscription
       const unsubscribe = budgetService.subscribeToBudgetGoals?.(
         user.id,
@@ -45,6 +44,13 @@ const BudgetGoals = () => {
     }
   }, [user?.id]);
 
+  // Load (and reload whenever the selected month changes)
+  useEffect(() => {
+    if (user?.id) {
+      loadBudgetData();
+    }
+  }, [user?.id, filters.month]);
+
   const loadBudgetData = async () => {
     if (!user?.id) return;
 
@@ -52,10 +58,12 @@ const BudgetGoals = () => {
       setLoading(true);
       setError(''); // Clear error when starting to load
       
-      // Load categories and budget goals concurrently
+      // Load categories and budget goals concurrently, scoped to the
+      // selected month (defaults to the current month)
+      const [selectedYear, selectedMonth] = filters.month.split('-').map(Number);
       const [categoriesData, budgetGoalsData] = await Promise.all([
         budgetService.getCategories(user.id),
-        budgetService.getBudgetGoals(user.id)
+        budgetService.getBudgetGoals(user.id, selectedMonth, selectedYear)
       ]);
 
       setCategories(categoriesData || []);
@@ -274,7 +282,8 @@ const BudgetGoals = () => {
     setFilters({
       category: '',
       status: '',
-      sortBy: 'name-asc'
+      sortBy: 'name-asc',
+      month: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
     });
   };
 
@@ -392,6 +401,7 @@ const BudgetGoals = () => {
               totalSpent={totalSpent}
               remainingBalance={remainingBalance}
               completionPercentage={completionPercentage}
+              monthLabel={new Date(`${filters.month}-01`).toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}
             />
           </div>
 
