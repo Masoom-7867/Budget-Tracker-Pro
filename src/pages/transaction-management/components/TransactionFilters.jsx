@@ -9,6 +9,7 @@ const TransactionFilters = ({
   filters, 
   onFilterChange, 
   categories, 
+  accounts = [],
   totalFilteredAmount,
   filteredCount,
   totalCount 
@@ -25,6 +26,14 @@ const TransactionFilters = ({
     ...categories.map(cat => ({
       value: cat.id,
       label: cat.name
+    }))
+  ];
+
+  const accountOptions = [
+    { value: '', label: 'All Accounts' },
+    ...accounts.map(acc => ({
+      value: acc.id,
+      label: acc.name
     }))
   ];
 
@@ -59,6 +68,7 @@ const TransactionFilters = ({
       search: '',
       type: '',
       category: '',
+      account: '',
       period: 'allTime',
       dateFrom: '',
       dateTo: ''
@@ -71,7 +81,7 @@ const TransactionFilters = ({
   ];
 
   const hasActiveFilters = filters.search !== '' || filters.type !== '' ||
-    filters.category !== '' || filters.period !== 'thisMonth';
+    filters.category !== '' || filters.account !== '' || filters.period !== 'thisMonth';
 
   return (
     <div className="bg-card rounded-lg border border-border p-6 mb-6">
@@ -98,7 +108,7 @@ const TransactionFilters = ({
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Input
           label="Search"
           type="search"
@@ -119,6 +129,13 @@ const TransactionFilters = ({
           options={categoryOptions}
           value={filters.category}
           onChange={(value) => handleFilterChange('category', value)}
+        />
+
+        <Select
+          label="Account"
+          options={accountOptions}
+          value={filters.account}
+          onChange={(value) => handleFilterChange('account', value)}
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

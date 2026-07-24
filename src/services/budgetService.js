@@ -77,6 +77,12 @@ export const budgetService = {
             name,
             icon,
             type
+          ),
+          accounts (
+            id,
+            name,
+            icon,
+            color
           )
         `)
         .eq('user_id', userId)
@@ -84,12 +90,15 @@ export const budgetService = {
 
       if (error) throw error;
       
-      // Normalize the data to include category information
+      // Normalize the data to include category and account information
       return (data || []).map(transaction => ({
         ...transaction,
         category_name: transaction.categories?.name,
         category_icon: transaction.categories?.icon,
-        category_type: transaction.categories?.type
+        category_type: transaction.categories?.type,
+        account_name: transaction.accounts?.name,
+        account_icon: transaction.accounts?.icon,
+        account_color: transaction.accounts?.color
       }));
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -555,6 +564,103 @@ export const budgetService = {
   },
 
 
+
+  // =====================================
+  // Accounts
+  // =====================================
+
+  async getAccounts(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching accounts:', error);
+      throw new Error('Failed to load accounts');
+    }
+  },
+
+  // Ensures the special single 'savings' account always exists for a user,
+  // since it represents the existing Savings Tracker feature rather than
+  // something the user creates themselves. Returns it either way.
+  async ensureSavingsAccount(userId) {
+    try {
+      const { data: existing, error: findError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('type', 'savings')
+        .maybeSingle();
+
+      if (findError) throw findError;
+      if (existing) return existing;
+
+      const { data: created, error: createError } = await supabase
+        .from('accounts')
+        .insert([{ user_id: userId, name: 'Savings', type: 'savings', icon: 'PiggyBank', color: '#059669' }])
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      return created;
+    } catch (error) {
+      console.error('Error ensuring savings account:', error);
+      throw new Error('Failed to load savings account');
+    }
+  },
+
+  async createAccount(accountData) {
+    try {
+      const { data, error } = await supabase
+        .from('accounts')
+        .insert([accountData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating account:', error);
+      throw new Error('Failed to create account');
+    }
+  },
+
+  async updateAccount(id, updates) {
+    try {
+      const { data, error } = await supabase
+        .from('accounts')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating account:', error);
+      throw new Error('Failed to update account');
+    }
+  },
+
+  async deleteAccount(id) {
+    try {
+      const { error } = await supabase
+        .from('accounts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      throw new Error('Failed to delete account');
+    }
+  },
 
   async getMonthlyBudget(userId, month, year) {
     try {

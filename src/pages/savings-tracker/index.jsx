@@ -6,6 +6,7 @@ import SavingsBalanceCard from './components/SavingsBalanceCard';
 import SavingsActions from './components/SavingsActions';
 import SavingsHistory from './components/SavingsHistory';
 import SavingsGoals from './components/SavingsGoals';
+import { calculateSavingsBalance } from '../../utils/savingsBalance';
 
 const SavingsTracker = () => {
   const { user } = useAuth();
@@ -74,12 +75,7 @@ const SavingsTracker = () => {
     }
   };
 
-  const calculateCurrentBalance = (transactions) => {
-    return transactions.reduce((balance, transaction) => {
-      const amount = parseFloat(transaction.amount) || 0;
-      return transaction.type === 'deposit' ? balance + amount : balance - amount;
-    }, 0);
-  };
+  const calculateCurrentBalance = (transactions) => calculateSavingsBalance(transactions);
 
   const handleAddMoney = async (amount) => {
     try {
@@ -95,6 +91,18 @@ const SavingsTracker = () => {
 
       console.log('Creating deposit transaction:', transactionData);
       await budgetService.createSavingsTransaction(transactionData);
+
+      // Mirror this on Transaction Management too, tagged to the Savings
+      // account, so the two pages stay in sync either way it's entered.
+      const savingsAccount = await budgetService.ensureSavingsAccount(user.id);
+      await budgetService.createTransaction({
+        user_id: user.id,
+        account_id: savingsAccount.id,
+        type: 'income',
+        amount: parseFloat(amount),
+        description: 'Deposit to Savings',
+        date: new Date().toISOString().split('T')[0]
+      });
     } catch (error) {
       console.error('Error adding money:', error);
       setError('Failed to add money: ' + error.message);
@@ -126,6 +134,17 @@ const SavingsTracker = () => {
 
       console.log('Creating withdrawal transaction:', transactionData);
       await budgetService.createSavingsTransaction(transactionData);
+
+      // Mirror this on Transaction Management too, tagged to the Savings account
+      const savingsAccount = await budgetService.ensureSavingsAccount(user.id);
+      await budgetService.createTransaction({
+        user_id: user.id,
+        account_id: savingsAccount.id,
+        type: 'expense',
+        amount: parseFloat(amount),
+        description: 'Withdrawal from Savings',
+        date: new Date().toISOString().split('T')[0]
+      });
     } catch (error) {
       console.error('Error subtracting money:', error);
       setError('Failed to subtract money: ' + error.message);

@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 import Button from '../../../components/ui/Button';
+import Select from '../../../components/ui/Select';
 import Icon from '../../../components/AppIcon';
 import { formatCurrency } from '../../../utils/currency';
 
 const TransactionTable = ({ 
   transactions, 
+  categories = [],
   onEditTransaction, 
   onDeleteTransaction,
+  onQuickCategorize,
   sortConfig,
   onSort 
 }) => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  const categoryOptionsForType = (type) => categories
+    .filter((cat) => cat.type === type)
+    .map((cat) => ({ value: cat.id, label: cat.name }));
 
   const handleSort = (field) => {
     const direction = sortConfig.field === field && sortConfig.direction === 'asc' ? 'desc' : 'asc';
@@ -115,6 +122,9 @@ const TransactionTable = ({
                 </button>
               </th>
               <th className="text-left p-4">
+                <span className="text-sm font-medium text-foreground">Account</span>
+              </th>
+              <th className="text-left p-4">
                 <button
                   onClick={() => handleSort('type')}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
@@ -147,16 +157,32 @@ const TransactionTable = ({
                   <span className="text-sm text-foreground font-medium">{transaction.description}</span>
                 </td>
                 <td className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <Icon 
-                      name={getCategoryIcon(transaction)} 
-                      size={16} 
-                      className="text-muted-foreground" 
-                    />
-                    <span className="text-sm text-foreground">
-                      {getCategoryName(transaction)}
-                    </span>
-                  </div>
+                  {transaction.category_id ? (
+                    <div className="flex items-center space-x-2">
+                      <Icon 
+                        name={getCategoryIcon(transaction)} 
+                        size={16} 
+                        className="text-muted-foreground" 
+                      />
+                      <span className="text-sm text-foreground">
+                        {getCategoryName(transaction)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-44">
+                      <Select
+                        placeholder="Assign category..."
+                        options={categoryOptionsForType(transaction.type)}
+                        value=""
+                        onChange={(categoryId) => onQuickCategorize(transaction.id, categoryId)}
+                      />
+                    </div>
+                  )}
+                </td>
+                <td className="p-4">
+                  <span className="text-sm text-muted-foreground">
+                    {transaction.account_name || '—'}
+                  </span>
                 </td>
                 <td className="p-4">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -224,7 +250,10 @@ const TransactionTable = ({
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <h4 className="font-medium text-foreground mb-1">{transaction.description}</h4>
-                <p className="text-sm text-muted-foreground">{formatDate(transaction.date)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(transaction.date)}
+                  {transaction.account_name && ` · ${transaction.account_name}`}
+                </p>
               </div>
               <span className={`text-lg font-semibold ${
                 transaction.type === 'income' ? 'text-success' : 'text-error'
@@ -235,16 +264,27 @@ const TransactionTable = ({
             
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-1">
-                  <Icon 
-                    name={getCategoryIcon(transaction)} 
-                    size={14} 
-                    className="text-muted-foreground" 
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    {getCategoryName(transaction)}
-                  </span>
-                </div>
+                {transaction.category_id ? (
+                  <div className="flex items-center space-x-1">
+                    <Icon 
+                      name={getCategoryIcon(transaction)} 
+                      size={14} 
+                      className="text-muted-foreground" 
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {getCategoryName(transaction)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="w-36">
+                    <Select
+                      placeholder="Assign category..."
+                      options={categoryOptionsForType(transaction.type)}
+                      value=""
+                      onChange={(categoryId) => onQuickCategorize(transaction.id, categoryId)}
+                    />
+                  </div>
+                )}
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                   transaction.type === 'income' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
                 }`}>

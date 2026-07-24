@@ -9,12 +9,14 @@ const EditTransactionModal = ({
   isOpen, 
   onClose, 
   onSave, 
-  categories 
+  categories,
+  accounts = []
 }) => {
   const [formData, setFormData] = useState({
     type: '',
     amount: '',
     category_id: '',
+    account_id: '',
     date: '',
     description: ''
   });
@@ -27,7 +29,8 @@ const EditTransactionModal = ({
       setFormData({
         type: transaction.type,
         amount: transaction.amount.toString(),
-        category_id: transaction.category_id,
+        category_id: transaction.category_id || '',
+        account_id: transaction.account_id || '',
         date: transaction.date,
         description: transaction.description
       });
@@ -65,9 +68,7 @@ const EditTransactionModal = ({
       newErrors.amount = 'Please enter a valid amount greater than 0';
     }
 
-    if (!formData.category_id) {
-      newErrors.category_id = 'Category is required';
-    }
+    // Category is optional here too, consistent with adding a transaction
 
     if (!formData.date) {
       newErrors.date = 'Date is required';
@@ -90,7 +91,8 @@ const EditTransactionModal = ({
         const updatedTransaction = {
           type: formData.type,
           amount: parseFloat(formData.amount),
-          category_id: formData.category_id,
+          category_id: formData.category_id || null,
+          account_id: formData.account_id || null,
           date: formData.date,
           description: formData.description.trim()
         };
@@ -112,6 +114,7 @@ const EditTransactionModal = ({
       type: '',
       amount: '',
       category_id: '',
+      account_id: '',
       date: '',
       description: ''
     });
@@ -184,14 +187,14 @@ const EditTransactionModal = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Select
-              label="Category"
+              label="Category (optional)"
               placeholder={formData.type ? "Select category" : "Select type first"}
               options={categoryOptions}
               value={formData.category_id}
               onChange={(value) => handleInputChange('category_id', value)}
               error={errors.category_id}
-              disabled={!formData.type || categoryOptions.length === 0}
-              required
+              disabled={!formData.type}
+              clearable
             />
 
             <Input
@@ -201,6 +204,17 @@ const EditTransactionModal = ({
               onChange={(e) => handleInputChange('date', e.target.value)}
               error={errors.date}
               required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Select
+              label="Account (optional)"
+              placeholder="Which account is this going from/into?"
+              options={accounts.map((acc) => ({ value: acc.id, label: acc.name }))}
+              value={formData.account_id}
+              onChange={(value) => handleInputChange('account_id', value)}
+              clearable
             />
           </div>
 

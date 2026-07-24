@@ -12,6 +12,7 @@ const Header = () => {
 
   const navigation = [
     { name: 'Dashboard', path: '/dashboard', icon: 'BarChart3' },
+    { name: 'Accounts', path: '/accounts', icon: 'Landmark' },
     { name: 'Transactions', path: '/transaction-management', icon: 'ArrowLeftRight' },
     { name: 'Budget Goals', path: '/budget-goals', icon: 'Target' },
     { name: 'Savings Tracker', path: '/savings-tracker', icon: 'PiggyBank' },

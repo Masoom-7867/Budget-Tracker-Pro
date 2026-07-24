@@ -15,6 +15,7 @@ const TransactionManagement = () => {
   const { user } = useAuth();
   
   const [categories, setCategories] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,6 +28,7 @@ const TransactionManagement = () => {
     search: '',
     type: '',
     category: '',
+    account: '',
     period: 'thisMonth',
     ...getMonthToDateRange()
   }));
@@ -53,13 +55,18 @@ const TransactionManagement = () => {
       setLoading(true);
       setError('');
 
-      const [transactionsData, categoriesData] = await Promise.all([
+      // Make sure the Savings account always exists so it's selectable here
+      await budgetService.ensureSavingsAccount(user.id);
+
+      const [transactionsData, categoriesData, accountsData] = await Promise.all([
         budgetService.getTransactions(user.id),
-        budgetService.getCategories(user.id)
+        budgetService.getCategories(user.id),
+        budgetService.getAccounts(user.id)
       ]);
 
       setTransactions(transactionsData || []);
       setCategories(categoriesData || []);
+      setAccounts(accountsData || []);
 
       if (!categoriesData || categoriesData.length === 0) {
         setError('No categories found. Please create categories first in the Category Manager.');
@@ -94,6 +101,13 @@ const TransactionManagement = () => {
     if (filters.category) {
       filtered = filtered.filter(transaction => 
         transaction.category_id?.toString() === filters.category.toString()
+      );
+    }
+
+    // Account filter - uses account_id
+    if (filters.account) {
+      filtered = filtered.filter(transaction => 
+        transaction.account_id?.toString() === filters.account.toString()
       );
     }
 
@@ -160,6 +174,26 @@ const TransactionManagement = () => {
         ...newTransactionData,
         user_id: user.id
       });
+
+      // If this transaction was logged against the Savings account, mirror
+      // it into savings_transactions too so it also shows up (and affects
+      // the balance) on the Savings Tracker page, keeping the two in sync.
+      const account = accounts.find(acc => acc.id === newTransactionData.account_id);
+      if (account?.type === 'savings') {
+        try {
+          await budgetService.createSavingsTransaction({
+            user_id: user.id,
+            type: newTransactionData.type === 'income' ? 'deposit' : 'withdrawal',
+            amount: newTransactionData.amount,
+            description: newTransactionData.description,
+            date: newTransactionData.date
+          });
+        } catch (savingsError) {
+          console.error('Error mirroring transaction to Savings:', savingsError);
+          setError('Transaction saved, but could not be mirrored to your Savings balance: ' + savingsError.message);
+        }
+      }
+
       refreshData();
     } catch (error) {
       setError(error.message || 'Failed to add transaction');
@@ -176,7 +210,7 @@ const TransactionManagement = () => {
   // Handle saving edited transaction
   const handleSaveTransaction = async (updatedTransactionData) => {
     try {
-      const { category_name, category_icon, category_type, ...cleanData } = updatedTransactionData;
+      const { category_name, category_icon, category_type, account_name, account_icon, account_color, ...cleanData } = updatedTransactionData;
       
       await budgetService.updateTransaction(editingTransaction.id, cleanData);
       setIsEditModalOpen(false);
@@ -184,6 +218,8 @@ const TransactionManagement = () => {
     } catch (error) {
       setError('Failed to update transaction: ' + error.message);
       throw error;
+    } finally {
+      refreshData();
     }
   };
 
@@ -194,7 +230,22 @@ const TransactionManagement = () => {
         await budgetService.deleteTransaction(transactionId);
       } catch (error) {
         setError('Failed to delete transaction: ' + error.message);
+      } finally {
+        refreshData();
       }
+    }
+  };
+
+  // Quickly assign a category to a transaction from the table, without
+  // opening the full edit modal - the main path for clearing the
+  // "Needs Categorization" list.
+  const handleQuickCategorize = async (transactionId, categoryId) => {
+    try {
+      await budgetService.updateTransaction(transactionId, { category_id: categoryId });
+    } catch (error) {
+      setError('Failed to assign category: ' + error.message);
+    } finally {
+      refreshData();
     }
   };
 
@@ -272,6 +323,7 @@ const TransactionManagement = () => {
             <TransactionForm
               onAddTransaction={handleAddTransaction}
               categories={categories}
+              accounts={accounts}
             />
           </div>
 
@@ -289,6 +341,7 @@ const TransactionManagement = () => {
               filters={filters}
               onFilterChange={handleFilterChange}
               categories={categories}
+              accounts={accounts}
               totalFilteredAmount={totalFilteredAmount}
               filteredCount={filteredTransactions.length}
               totalCount={transactions.length}
@@ -297,8 +350,10 @@ const TransactionManagement = () => {
             {/* Transaction Table */}
             <TransactionTable
               transactions={sortedTransactions}
+              categories={categories}
               onEditTransaction={handleEditTransaction}
               onDeleteTransaction={handleDeleteTransaction}
+              onQuickCategorize={handleQuickCategorize}
               sortConfig={sortConfig}
               onSort={handleSort}
             />
@@ -316,6 +371,7 @@ const TransactionManagement = () => {
         }}
         onSave={handleSaveTransaction}
         categories={categories}
+        accounts={accounts}
       />
 
       {/* Import CSV Modal */}
@@ -325,6 +381,7 @@ const TransactionManagement = () => {
         onImportComplete={refreshData}
         userId={user?.id}
         categories={categories}
+        accounts={accounts}
       />
     </div>
   );

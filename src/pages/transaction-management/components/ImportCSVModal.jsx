@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Papa from 'papaparse';
 import Button from '../../../components/ui/Button';
+import Select from '../../../components/ui/Select';
 import Icon from '../../../components/AppIcon';
 import { budgetService } from '../../../services/budgetService';
 
@@ -33,11 +34,12 @@ const validateRow = (raw, rowNumber) => {
   return { row: { date, type, category, amount, description } };
 };
 
-const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories }) => {
+const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories, accounts = [] }) => {
   const [fileName, setFileName] = useState('');
   const [validRows, setValidRows] = useState([]);
   const [errors, setErrors] = useState([]);
   const [newCategories, setNewCategories] = useState([]);
+  const [selectedAccountId, setSelectedAccountId] = useState('');
   const [stage, setStage] = useState('select'); // 'select' | 'preview' | 'importing' | 'done' | 'error'
   const [importResult, setImportResult] = useState(null);
   const [importError, setImportError] = useState('');
@@ -50,6 +52,7 @@ const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories 
     setValidRows([]);
     setErrors([]);
     setNewCategories([]);
+    setSelectedAccountId('');
     setStage('select');
     setImportResult(null);
     setImportError('');
@@ -128,10 +131,16 @@ const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories 
       createdCategoryMap.forEach((id, key) => categoryIdByKey.set(key, id));
 
       // 3. Build transaction rows and bulk insert
+      // Note: unlike adding a transaction manually, importing a CSV against
+      // the Savings account deliberately does NOT mirror into
+      // savings_transactions - a bulk historical import (e.g. old bank
+      // statements) shouldn't retroactively change your current, live
+      // Savings Tracker balance.
       const transactionsToInsert = validRows.map((row) => ({
         user_id: userId,
         type: row.type,
         category_id: categoryIdByKey.get(`${row.category.trim().toLowerCase()}|${row.type}`) || null,
+        account_id: selectedAccountId || null,
         amount: row.amount,
         description: row.description,
         date: row.date
@@ -215,6 +224,16 @@ const ImportCSVModal = ({ isOpen, onClose, onImportComplete, userId, categories 
                   <p className="text-xs text-muted-foreground">New categories</p>
                 </div>
               </div>
+
+              <Select
+                label="Account (optional)"
+                description="Applied to every transaction in this file"
+                placeholder="Which account is this statement from?"
+                options={accounts.map((acc) => ({ value: acc.id, label: acc.name }))}
+                value={selectedAccountId}
+                onChange={setSelectedAccountId}
+                clearable
+              />
 
               {newCategories.length > 0 && (
                 <div>

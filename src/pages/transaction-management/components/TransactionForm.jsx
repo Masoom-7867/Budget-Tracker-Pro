@@ -4,11 +4,12 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Icon from '../../../components/AppIcon';
 
-const TransactionForm = ({ onAddTransaction, categories }) => {
+const TransactionForm = ({ onAddTransaction, categories, accounts = [] }) => {
   const [formData, setFormData] = useState({
     type: '',
     amount: '',
     category_id: '',
+    account_id: '',
     date: new Date().toISOString().split('T')[0],
     description: ''
   });
@@ -57,9 +58,8 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
       newErrors.amount = 'Please enter a valid amount greater than 0';
     }
 
-    if (!formData.category_id) {
-      newErrors.category_id = 'Category is required';
-    }
+    // Category is optional - a transaction can be logged now and
+    // categorized later from the "Needs Categorization" list
 
     if (!formData.date) {
       newErrors.date = 'Date is required';
@@ -82,7 +82,8 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
         const newTransaction = {
           type: formData.type,
           amount: parseFloat(formData.amount),
-          category_id: formData.category_id,
+          category_id: formData.category_id || null,
+          account_id: formData.account_id || null,
           date: formData.date,
           description: formData.description.trim()
         };
@@ -103,6 +104,7 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
       type: '',
       amount: '',
       category_id: '',
+      account_id: '',
       date: new Date().toISOString().split('T')[0],
       description: ''
     });
@@ -173,7 +175,7 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <Select
-              label="Category"
+              label="Category (optional)"
               placeholder={!formData.type ? "Select transaction type first" : 
                          !hasFilteredCategories ? "No categories available for this type" : 
                          "Select category"}
@@ -182,11 +184,16 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
               onChange={(value) => handleInputChange('category_id', value)}
               error={errors.category_id}
               disabled={!formData.type || !hasFilteredCategories}
-              required
+              clearable
             />
             {formData.type && !hasFilteredCategories && hasCategories && (
               <p className="mt-1 text-xs text-warning">
                 No {formData.type} categories found. Create {formData.type} categories in the Category Manager.
+              </p>
+            )}
+            {!formData.category_id && formData.type && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Leave blank to categorize later from "Needs Categorization"
               </p>
             )}
           </div>
@@ -198,6 +205,17 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
             onChange={(e) => handleInputChange('date', e.target.value)}
             error={errors.date}
             required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Select
+            label="Account (optional)"
+            placeholder="Which account is this going from/into?"
+            options={accounts.map((acc) => ({ value: acc.id, label: acc.name }))}
+            value={formData.account_id}
+            onChange={(value) => handleInputChange('account_id', value)}
+            clearable
           />
         </div>
 
@@ -225,7 +243,7 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
             iconName="Save"
             iconPosition="left"
             className="flex-1 sm:flex-none"
-            disabled={isSubmitting || !hasCategories}
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'Saving...' : 'Save Transaction'}
           </Button>
