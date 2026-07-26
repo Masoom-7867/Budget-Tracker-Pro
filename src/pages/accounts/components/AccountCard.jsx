@@ -10,11 +10,11 @@ const TYPE_LABELS = {
   other: 'Other'
 };
 
-const AccountCard = ({ account, balance, onEdit, onDelete, onViewSavings }) => {
+const AccountCard = ({ account, balance, onEdit, onDelete, onViewSavings, isExpanded, onToggleActivity }) => {
   const isSavings = account.type === 'savings';
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 flex flex-col gap-4">
+    <div className={`bg-card rounded-xl border p-5 flex flex-col gap-4 transition-colors ${isExpanded ? 'border-primary' : 'border-border'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -29,16 +29,21 @@ const AccountCard = ({ account, balance, onEdit, onDelete, onViewSavings }) => {
           </div>
         </div>
 
-        {!isSavings && (
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => onEdit(account)}>
-              <Icon name="Pencil" size={14} />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(account.id)}>
-              <Icon name="Trash2" size={14} />
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={onToggleActivity} aria-label="Toggle activity chart">
+            <Icon name="LineChart" size={14} />
+          </Button>
+          {!isSavings && (
+            <>
+              <Button variant="ghost" size="icon" onClick={() => onEdit(account)}>
+                <Icon name="Pencil" size={14} />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => onDelete(account.id)}>
+                <Icon name="Trash2" size={14} />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div>

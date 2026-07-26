@@ -9,15 +9,18 @@ import { formatCurrency } from '../../utils/currency';
 import { calculateSavingsBalance } from '../../utils/savingsBalance';
 import AccountCard from './components/AccountCard';
 import AccountModal from './components/AccountModal';
+import AccountActivityChart from './components/AccountActivityChart';
 
 const Accounts = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const [accounts, setAccounts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [savingsBalance, setSavingsBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedAccountId, setExpandedAccountId] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
@@ -32,13 +35,15 @@ const Accounts = () => {
       // Make sure the Savings account always exists so it's always shown
       await budgetService.ensureSavingsAccount(user.id);
 
-      const [accountsData, savingsTransactions] = await Promise.all([
+      const [accountsData, savingsTransactions, transactionsData] = await Promise.all([
         budgetService.getAccounts(user.id),
-        budgetService.getSavingsTransactions(user.id)
+        budgetService.getSavingsTransactions(user.id),
+        budgetService.getTransactions(user.id)
       ]);
 
       setAccounts(accountsData);
       setSavingsBalance(calculateSavingsBalance(savingsTransactions));
+      setTransactions(transactionsData || []);
     } catch (err) {
       console.error('Error loading accounts:', err);
       setError(err.message || 'Failed to load accounts');
@@ -158,9 +163,20 @@ const Accounts = () => {
                 onEdit={openEditModal}
                 onDelete={handleDeleteAccount}
                 onViewSavings={() => navigate('/savings-tracker')}
+                isExpanded={expandedAccountId === account.id}
+                onToggleActivity={() => setExpandedAccountId((prev) => (prev === account.id ? null : account.id))}
               />
             ))}
           </div>
+
+          {expandedAccountId && accounts.some((a) => a.id === expandedAccountId) && (
+            <div className="mt-6">
+              <AccountActivityChart
+                account={accounts.find((a) => a.id === expandedAccountId)}
+                transactions={transactions}
+              />
+            </div>
+          )}
 
           <AccountModal
             isOpen={isModalOpen}
