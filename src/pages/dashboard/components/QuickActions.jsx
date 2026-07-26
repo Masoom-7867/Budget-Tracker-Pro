@@ -37,12 +37,10 @@ const QuickActions = () => {
       id: 4,
       name: 'View Reports',
       description: 'Detailed financial reports',
-      icon: 'BarChart3',
+      icon: 'FileBarChart',
       color: 'var(--color-secondary)',
       bgColor: 'bg-secondary/10',
-      // There is no standalone /reports route - the report lives inline on
-      // this dashboard, so scroll to it instead of navigating to a 404.
-      onClick: () => document.getElementById('reports-section')?.scrollIntoView({ behavior: 'smooth' })
+      onClick: () => navigate('/reports')
     }
   ];
 

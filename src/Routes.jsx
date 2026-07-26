@@ -10,6 +10,7 @@ import Dashboard from './pages/dashboard';
 import SavingsTracker from './pages/savings-tracker';
 import CategoryManager from './pages/category-manager';
 import Accounts from './pages/accounts';
+import Reports from './pages/reports';
 
 const Routes = () => {
   return (
@@ -46,6 +47,11 @@ const Routes = () => {
           <Route path="/accounts" element={
             <ProtectedRoute>
               <Accounts />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <Reports />
             </ProtectedRoute>
           } />
           <Route path="/category-manager" element={

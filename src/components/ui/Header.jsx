@@ -15,6 +15,7 @@ const Header = () => {
     { name: 'Accounts', path: '/accounts', icon: 'Landmark' },
     { name: 'Transactions', path: '/transaction-management', icon: 'ArrowLeftRight' },
     { name: 'Budget Goals', path: '/budget-goals', icon: 'Target' },
+    { name: 'Reports', path: '/reports', icon: 'FileBarChart' },
     { name: 'Savings Tracker', path: '/savings-tracker', icon: 'PiggyBank' },
     { name: 'Categories', path: '/category-manager', icon: 'Tags' }
   ];
