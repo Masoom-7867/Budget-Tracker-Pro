@@ -788,6 +788,83 @@ export const budgetService = {
     }
   },
 
+  // =====================================
+  // Net Worth Trend (account balance snapshots)
+  // =====================================
+
+  // Captures/updates this month's balance snapshot for every account the
+  // user has, so a trend line can be built over time. Safe to call
+  // repeatedly - upserts on (account_id, year, month), so calling it again
+  // within the same month just keeps that month's figure current rather
+  // than creating duplicates.
+  async ensureCurrentMonthSnapshots(userId) {
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+
+      const accounts = await this.getAccounts(userId);
+      if (!accounts.length) return;
+
+      // The Savings account's `balance` column is intentionally never kept
+      // in sync (see ensureSavingsAccount) - its real balance always comes
+      // from savings_transactions, so compute that here rather than using
+      // the stale column value.
+      let savingsBalance = null;
+      const hasSavingsAccount = accounts.some((a) => a.type === 'savings');
+      if (hasSavingsAccount) {
+        const savingsTransactions = await this.getSavingsTransactions(userId);
+        savingsBalance = (savingsTransactions || []).reduce((bal, t) => {
+          const amount = parseFloat(t.amount) || 0;
+          return t.type === 'deposit' ? bal + amount : bal - amount;
+        }, 0);
+      }
+
+      const snapshots = accounts.map((account) => ({
+        user_id: userId,
+        account_id: account.id,
+        year,
+        month,
+        balance: account.type === 'savings' ? savingsBalance : (Number(account.balance) || 0)
+      }));
+
+      const { error } = await supabase
+        .from('account_balance_snapshots')
+        .upsert(snapshots, { onConflict: 'account_id,year,month' });
+
+      if (error) throw error;
+    } catch (error) {
+      // Non-fatal: the Net Worth report just has a gap for this month if
+      // this fails, so don't block the rest of the Reports page over it.
+      console.error('Error capturing account balance snapshots:', error);
+    }
+  },
+
+  async getBalanceSnapshots(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('account_balance_snapshots')
+        .select(`
+          *,
+          accounts (
+            id,
+            name,
+            type
+          )
+        `)
+        .eq('user_id', userId)
+        .order('year', { ascending: true })
+        .order('month', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching balance snapshots:', error);
+      throw new Error('Failed to load net worth history');
+    }
+  },
+
+
   subscribeToBudgetGoals(userId, callback) {
     const subscription = supabase
       .channel('budget-goals-changes')

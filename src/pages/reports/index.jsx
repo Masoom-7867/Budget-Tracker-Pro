@@ -7,6 +7,8 @@ import PeriodSelector from './components/PeriodSelector';
 import CashFlowReport from './components/CashFlowReport';
 import CategoryBreakdownReport from './components/CategoryBreakdownReport';
 import BudgetVsActualReport from './components/BudgetVsActualReport';
+import SavingsRateReport from './components/SavingsRateReport';
+import NetWorthTrendReport from './components/NetWorthTrendReport';
 
 const Reports = () => {
   const { user } = useAuth();
@@ -17,6 +19,7 @@ const Reports = () => {
 
   const [transactions, setTransactions] = useState([]);
   const [budgetGoals, setBudgetGoals] = useState([]);
+  const [balanceSnapshots, setBalanceSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -47,10 +50,24 @@ const Reports = () => {
     }
   }, [user?.id, month, year]);
 
+  // Captures this month's balance snapshot (if not already done today) then
+  // loads the full history for the Net Worth Trend chart.
+  const loadNetWorthData = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      await budgetService.ensureCurrentMonthSnapshots(user.id);
+      const data = await budgetService.getBalanceSnapshots(user.id);
+      setBalanceSnapshots(data || []);
+    } catch (err) {
+      console.error('Error loading net worth data:', err);
+      setError(err.message || 'Failed to load net worth history');
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadTransactions(), loadBudgetGoals()]).finally(() => setLoading(false));
-  }, [loadTransactions, loadBudgetGoals]);
+    Promise.all([loadTransactions(), loadBudgetGoals(), loadNetWorthData()]).finally(() => setLoading(false));
+  }, [loadTransactions, loadBudgetGoals, loadNetWorthData]);
 
   const handlePeriodChange = (newMonth, newYear) => {
     setMonth(newMonth);
@@ -79,7 +96,7 @@ const Reports = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Reports</h1>
             <p className="text-muted-foreground">
-              Cash flow, category spending, and budget performance - all with the ability to look back at previous periods.
+              Cash flow, net worth, savings rate, category spending, and budget performance - all with the ability to look back at previous periods.
             </p>
           </div>
 
@@ -95,6 +112,11 @@ const Reports = () => {
           <div className="space-y-6">
             {/* Cash Flow has its own independent Monthly/Annual controls */}
             <CashFlowReport transactions={transactions} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <NetWorthTrendReport snapshots={balanceSnapshots} />
+              <SavingsRateReport transactions={transactions} />
+            </div>
 
             {/* Category Breakdown and Budget vs Actual share one month selector */}
             <div className="bg-card rounded-xl border border-border p-4 flex items-center justify-between flex-wrap gap-3">
