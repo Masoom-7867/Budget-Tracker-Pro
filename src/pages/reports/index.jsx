@@ -9,6 +9,8 @@ import CategoryBreakdownReport from './components/CategoryBreakdownReport';
 import BudgetVsActualReport from './components/BudgetVsActualReport';
 import SavingsRateReport from './components/SavingsRateReport';
 import NetWorthTrendReport from './components/NetWorthTrendReport';
+import RecurringExpensesReport from './components/RecurringExpensesReport';
+import CashFlowSankeyReport from './components/CashFlowSankeyReport';
 
 const Reports = () => {
   const { user } = useAuth();
@@ -20,6 +22,8 @@ const Reports = () => {
   const [transactions, setTransactions] = useState([]);
   const [budgetGoals, setBudgetGoals] = useState([]);
   const [balanceSnapshots, setBalanceSnapshots] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [savingsTransactions, setSavingsTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -64,10 +68,27 @@ const Reports = () => {
     }
   }, [user?.id]);
 
+  // Powers the Cash Flow Visualizer (Sankey) - needs to know which account
+  // is the Savings one, plus the dedicated savings ledger for that flow.
+  const loadCashFlowSankeyData = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const [accountsData, savingsData] = await Promise.all([
+        budgetService.getAccounts(user.id),
+        budgetService.getSavingsTransactions(user.id)
+      ]);
+      setAccounts(accountsData || []);
+      setSavingsTransactions(savingsData || []);
+    } catch (err) {
+      console.error('Error loading cash flow visualizer data:', err);
+      setError(err.message || 'Failed to load cash flow data');
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadTransactions(), loadBudgetGoals(), loadNetWorthData()]).finally(() => setLoading(false));
-  }, [loadTransactions, loadBudgetGoals, loadNetWorthData]);
+    Promise.all([loadTransactions(), loadBudgetGoals(), loadNetWorthData(), loadCashFlowSankeyData()]).finally(() => setLoading(false));
+  }, [loadTransactions, loadBudgetGoals, loadNetWorthData, loadCashFlowSankeyData]);
 
   const handlePeriodChange = (newMonth, newYear) => {
     setMonth(newMonth);
@@ -96,7 +117,7 @@ const Reports = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Reports</h1>
             <p className="text-muted-foreground">
-              Cash flow, net worth, savings rate, category spending, and budget performance - all with the ability to look back at previous periods.
+              Cash flow, net worth, savings rate, category spending, budget performance, recurring charges, and income flow - all with the ability to look back at previous periods.
             </p>
           </div>
 
@@ -118,9 +139,9 @@ const Reports = () => {
               <SavingsRateReport transactions={transactions} />
             </div>
 
-            {/* Category Breakdown and Budget vs Actual share one month selector */}
+            {/* Category Breakdown, Budget vs Actual, and Cash Flow Visualizer share one month selector */}
             <div className="bg-card rounded-xl border border-border p-4 flex items-center justify-between flex-wrap gap-3">
-              <p className="text-sm font-medium text-foreground">Category Breakdown &amp; Budget vs Actual for:</p>
+              <p className="text-sm font-medium text-foreground">Category Breakdown, Budget vs Actual &amp; Cash Flow Visualizer for:</p>
               <PeriodSelector month={month} year={year} onChange={handlePeriodChange} />
             </div>
 
@@ -128,6 +149,16 @@ const Reports = () => {
               <CategoryBreakdownReport transactions={transactions} month={month} year={year} />
               <BudgetVsActualReport budgetGoals={budgetGoals} />
             </div>
+
+            <CashFlowSankeyReport
+              transactions={transactions}
+              savingsTransactions={savingsTransactions}
+              accounts={accounts}
+              month={month}
+              year={year}
+            />
+
+            <RecurringExpensesReport transactions={transactions} />
           </div>
         </div>
       </main>
