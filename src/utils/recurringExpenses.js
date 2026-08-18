@@ -23,11 +23,11 @@ const detectCadence = (intervals) => {
   );
 };
 
-export const detectRecurringExpenses = (transactions) => {
+const detectRecurringTransactions = (transactions, type) => {
   const groups = new Map();
 
   (transactions || [])
-    .filter((t) => t.type === 'expense' && t.description?.trim())
+    .filter((t) => t.type === type && t.description?.trim())
     .forEach((t) => {
       const key = t.description.trim().toLowerCase();
       if (!groups.has(key)) groups.set(key, []);
@@ -62,6 +62,7 @@ export const detectRecurringExpenses = (transactions) => {
       cadence: cadenceRule.key,
       occurrences: sorted.length,
       avgAmount,
+      avgIntervalDays: Math.round(avgIntervalDays),
       monthlyEquivalent: avgAmount / cadenceRule.divisor,
       totalSpent: amounts.reduce((sum, v) => sum + v, 0),
       lastDate: lastTxn.date,
@@ -71,3 +72,7 @@ export const detectRecurringExpenses = (transactions) => {
 
   return results.sort((a, b) => b.monthlyEquivalent - a.monthlyEquivalent);
 };
+
+export const detectRecurringExpenses = (transactions) => detectRecurringTransactions(transactions, 'expense');
+
+export const detectRecurringIncome = (transactions) => detectRecurringTransactions(transactions, 'income');

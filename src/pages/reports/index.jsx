@@ -11,6 +11,9 @@ import SavingsRateReport from './components/SavingsRateReport';
 import NetWorthTrendReport from './components/NetWorthTrendReport';
 import RecurringExpensesReport from './components/RecurringExpensesReport';
 import CashFlowSankeyReport from './components/CashFlowSankeyReport';
+import CashFlowForecastReport from './components/CashFlowForecastReport';
+import SpendingAnomalyReport from './components/SpendingAnomalyReport';
+import { calculateSavingsBalance } from '../../utils/savingsBalance';
 
 const Reports = () => {
   const { user } = useAuth();
@@ -117,7 +120,7 @@ const Reports = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Reports</h1>
             <p className="text-muted-foreground">
-              Cash flow, net worth, savings rate, category spending, budget performance, recurring charges, and income flow - all with the ability to look back at previous periods.
+              Cash flow, forecasts, net worth, savings rate, category spending, budget performance, recurring charges, income flow, and spending anomalies - all with the ability to look back at previous periods.
             </p>
           </div>
 
@@ -139,9 +142,15 @@ const Reports = () => {
               <SavingsRateReport transactions={transactions} />
             </div>
 
-            {/* Category Breakdown, Budget vs Actual, and Cash Flow Visualizer share one month selector */}
+            <CashFlowForecastReport
+              transactions={transactions}
+              accounts={accounts}
+              savingsBalance={calculateSavingsBalance(savingsTransactions)}
+            />
+
+            {/* Category Breakdown, Budget vs Actual, Cash Flow Visualizer, and Spending Anomaly Detector share one month selector */}
             <div className="bg-card rounded-xl border border-border p-4 flex items-center justify-between flex-wrap gap-3">
-              <p className="text-sm font-medium text-foreground">Category Breakdown, Budget vs Actual &amp; Cash Flow Visualizer for:</p>
+              <p className="text-sm font-medium text-foreground">Category Breakdown, Budget vs Actual, Cash Flow Visualizer &amp; Anomaly Detector for:</p>
               <PeriodSelector month={month} year={year} onChange={handlePeriodChange} />
             </div>
 
@@ -149,6 +158,8 @@ const Reports = () => {
               <CategoryBreakdownReport transactions={transactions} month={month} year={year} />
               <BudgetVsActualReport budgetGoals={budgetGoals} />
             </div>
+
+            <SpendingAnomalyReport transactions={transactions} month={month} year={year} />
 
             <CashFlowSankeyReport
               transactions={transactions}
