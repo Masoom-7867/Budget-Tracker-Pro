@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Icon from '../AppIcon';
@@ -6,6 +6,8 @@ import Button from './Button';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut, userProfile } = useAuth();
@@ -24,6 +26,17 @@ const Header = () => {
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location?.pathname]);
+
+  // Close the user dropdown when clicking anywhere outside it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -74,24 +87,42 @@ const Header = () => {
           {/* User Menu & Mobile Menu Button */}
           <div className="flex items-center space-x-4">
             {user && (
-              <div className="hidden sm:flex items-center space-x-3">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-foreground">
-                    {userProfile?.full_name || 'User'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {userProfile?.email || user?.email}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSignOut}
-                  iconName="LogOut"
-                  iconPosition="left"
+              <div className="hidden sm:block relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted transition-colors"
                 >
-                  Sign Out
-                </Button>
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon name="User" size={16} className="text-primary" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground max-w-[120px] truncate">
+                    {userProfile?.full_name || 'User'}
+                  </span>
+                  <Icon name={isUserMenuOpen ? 'ChevronUp' : 'ChevronDown'} size={16} className="text-muted-foreground" />
+                </button>
+
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
+                    <div className="px-4 py-2 border-b border-border">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {userProfile?.full_name || 'User'}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {userProfile?.email || user?.email}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        handleSignOut();
+                      }}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-error hover:bg-muted transition-colors"
+                    >
+                      <Icon name="LogOut" size={16} />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
