@@ -90,24 +90,6 @@ const LoginForm = ({ onSwitchToSignup }) => {
             Don't have an account? Sign up
           </button>
         </div>
-
-        {/* Demo Credentials Section */}
-        <div className="mt-8 pt-6 border-t border-border">
-          <h3 className="text-sm font-medium text-foreground mb-3">Demo Credentials:</h3>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between items-center p-2 bg-muted rounded">
-              <span className="text-muted-foreground">Admin:</span>
-              <span className="font-mono">admin@budgettracker.com / admin123</span>
-            </div>
-            <div className="flex justify-between items-center p-2 bg-muted rounded">
-              <span className="text-muted-foreground">User:</span>
-              <span className="font-mono">user@budgettracker.com / user123</span>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Click on any credential to copy it to clipboard
-          </p>
-        </div>
       </div>
     </div>
   );
